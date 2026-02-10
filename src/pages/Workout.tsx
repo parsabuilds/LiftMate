@@ -164,7 +164,7 @@ export function Workout() {
       {currentStep === 'daySelect' && (
         <>
           <p className="text-muted mb-4">Choose your workout for today</p>
-          <DaySelector onSelectDay={handleDaySelect} />
+          <DaySelector gender={profile?.gender ?? 'male'} onSelectDay={handleDaySelect} />
         </>
       )}
 

@@ -1,18 +1,29 @@
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { getRoutineByGender } from '../../data/defaultRoutines';
 import type { DayType } from '../../types';
 
 interface DaySelectorProps {
+  gender: 'male' | 'female';
   onSelectDay: (day: DayType | 'rest') => void;
 }
 
-const dayOptions: { dayType: DayType; muscles: string[]; icon: string }[] = [
-  { dayType: 'Push', muscles: ['Chest', 'Triceps'], icon: '💪' },
-  { dayType: 'Pull', muscles: ['Back', 'Biceps'], icon: '🏋️' },
-  { dayType: 'Legs + Shoulders', muscles: ['Legs', 'Shoulders'], icon: '🦵' },
-];
+const iconMap: Record<string, string> = {
+  'Push': '💪',
+  'Pull': '🏋️',
+  'Legs + Shoulders': '🦵',
+  'Lower Body - Glute Focus': '🍑',
+  'Upper Body': '💪',
+  'Lower Body - Quad Focus': '🦵',
+};
 
-export function DaySelector({ onSelectDay }: DaySelectorProps) {
+export function DaySelector({ gender, onSelectDay }: DaySelectorProps) {
+  const routine = getRoutineByGender(gender);
+  const dayOptions = routine.days.map((day) => ({
+    dayType: day.dayType,
+    muscles: day.muscleGroups.map((mg) => mg.name),
+    icon: iconMap[day.dayType] ?? '🏋️',
+  }));
   return (
     <div className="space-y-3">
       {dayOptions.map((day) => (
