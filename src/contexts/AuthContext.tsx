@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from 'firebase/auth';
+import { GoogleAuthProvider, reauthenticateWithPopup, deleteUser } from 'firebase/auth';
+import { collection, getDocs } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
-import { useDocument } from '../hooks/useFirestore';
+import { useDocument, deleteDocument } from '../hooks/useFirestore';
 import { seedUserData } from '../data/seedData';
+import { db } from '../lib/firebase';
 import type { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -12,9 +15,15 @@ interface AuthContextType {
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+async function deleteCollection(path: string) {
+  const snapshot = await getDocs(collection(db, path));
+  await Promise.all(snapshot.docs.map((d) => deleteDocument(`${path}/${d.id}`)));
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, signIn, signOut } = useAuth();
@@ -30,10 +39,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, authLoading, profileLoading, profile, seeding]);
 
+  const deleteAccount = async () => {
+    if (!user) return;
+    const uid = user.uid;
+
+    // Delete all user data from Firestore
+    await Promise.all([
+      deleteCollection(`users/${uid}/checklist`),
+      deleteCollection(`users/${uid}/workoutLogs`),
+      deleteCollection(`users/${uid}/dailyLogs`),
+    ]);
+    await deleteDocument(`users/${uid}/routine/current`);
+    await deleteDocument(`users/${uid}`);
+
+    // Delete the Firebase Auth account (may require re-auth)
+    try {
+      await deleteUser(user);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'auth/requires-recent-login') {
+        await reauthenticateWithPopup(user, new GoogleAuthProvider());
+        await deleteUser(user);
+      } else {
+        throw err;
+      }
+    }
+  };
+
   const loading = authLoading || profileLoading || seeding;
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );
