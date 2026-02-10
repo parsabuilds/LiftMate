@@ -9,7 +9,7 @@ export interface UserProfile {
   displayName: string;
   email: string;
   photoURL: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: 'male' | 'female';
   createdAt: number;
   currentStreak: number;
   longestStreak: number;

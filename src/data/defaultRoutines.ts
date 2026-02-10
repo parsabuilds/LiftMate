@@ -191,7 +191,7 @@ export const womensRoutine: Routine = {
   ],
 };
 
-export function getRoutineByGender(gender: 'male' | 'female' | 'other'): Routine {
+export function getRoutineByGender(gender: 'male' | 'female'): Routine {
   if (gender === 'female') return womensRoutine;
   return mensRoutine;
 }

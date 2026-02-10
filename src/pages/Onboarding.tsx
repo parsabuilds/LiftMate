@@ -7,12 +7,11 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 
-type Gender = 'male' | 'female' | 'other';
+type Gender = 'male' | 'female';
 
 const genderOptions: { value: Gender; label: string; emoji: string }[] = [
   { value: 'male', label: 'Male', emoji: '\uD83D\uDCAA' },
   { value: 'female', label: 'Female', emoji: '\uD83D\uDC83' },
-  { value: 'other', label: 'Other', emoji: '\u2B50' },
 ];
 
 export function Onboarding() {
@@ -32,7 +31,7 @@ export function Onboarding() {
         gender,
       });
 
-      const routine = getRoutineByGender(gender === 'other' ? 'male' : gender);
+      const routine = getRoutineByGender(gender);
       await setDocument(`users/${user.uid}/routine/current`, routine);
 
       navigate('/');
