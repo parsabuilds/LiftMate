@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from 'firebase/auth';
 import { GoogleAuthProvider, reauthenticateWithPopup, deleteUser } from 'firebase/auth';
@@ -27,13 +27,15 @@ async function deleteCollection(path: string) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const deletingRef = useRef(false);
+  const [deleting, setDeleting] = useState(false);
   const { data: profile, loading: profileLoading } = useDocument<UserProfile>(
     user ? `users/${user.uid}` : null
   );
   const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
-    if (user && !authLoading && !profileLoading && !profile && !seeding) {
+    if (user && !authLoading && !profileLoading && !profile && !seeding && !deletingRef.current) {
       setSeeding(true);
       seedUserData(user).finally(() => setSeeding(false));
     }
@@ -42,30 +44,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteAccount = async () => {
     if (!user) return;
     const uid = user.uid;
+    deletingRef.current = true;
+    setDeleting(true);
 
-    // Delete all user data from Firestore
-    await Promise.all([
-      deleteCollection(`users/${uid}/checklist`),
-      deleteCollection(`users/${uid}/workoutLogs`),
-      deleteCollection(`users/${uid}/dailyLogs`),
-    ]);
-    await deleteDocument(`users/${uid}/routine/current`);
-    await deleteDocument(`users/${uid}`);
-
-    // Delete the Firebase Auth account (may require re-auth)
     try {
-      await deleteUser(user);
-    } catch (err: unknown) {
-      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'auth/requires-recent-login') {
-        await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      // Delete Firestore data FIRST while still authenticated
+      await Promise.all([
+        deleteCollection(`users/${uid}/checklist`),
+        deleteCollection(`users/${uid}/workoutLogs`),
+        deleteCollection(`users/${uid}/dailyLogs`),
+      ]);
+      await deleteDocument(`users/${uid}/routine/current`);
+      await deleteDocument(`users/${uid}`);
+
+      // Then delete the Firebase Auth account
+      try {
         await deleteUser(user);
-      } else {
-        throw err;
+      } catch (err: unknown) {
+        if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'auth/requires-recent-login') {
+          await reauthenticateWithPopup(user, new GoogleAuthProvider());
+          await deleteUser(user);
+        } else {
+          throw err;
+        }
       }
+    } finally {
+      deletingRef.current = false;
+      setDeleting(false);
     }
   };
 
-  const loading = authLoading || profileLoading || seeding;
+  const loading = authLoading || profileLoading || seeding || deleting;
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, deleteAccount }}>
