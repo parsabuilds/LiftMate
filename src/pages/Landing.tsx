@@ -129,7 +129,7 @@ export function Landing() {
   return (
     <div className="min-h-screen bg-bg text-text font-['Inter',sans-serif] overflow-x-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-xl border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-xl border-b border-white/5" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -153,7 +153,7 @@ export function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 px-6">
+      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 px-6" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top))' }}>
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/8 rounded-full blur-[120px]"></div>
           <div className="absolute top-40 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px]"></div>
