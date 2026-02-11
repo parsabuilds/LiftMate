@@ -86,3 +86,47 @@ export interface DailyLog {
   coldPlunge: boolean;
   checklist: Record<string, boolean>;
 }
+
+// Phase 3: Timeline Events
+export interface TimelineEvent {
+  id: string;
+  date: string;
+  type: 'supplement_start' | 'supplement_stop' | 'diet_change' | 'injury' | 'milestone' | 'other';
+  label: string;
+  color?: string;
+  notes?: string;
+}
+
+// Phase 3: Goals
+export interface Goal {
+  id: string;
+  title: string;
+  description?: string;
+  targetDate?: string;
+  completed: boolean;
+  completedAt?: number;
+  createdAt: number;
+  milestones: Milestone[];
+}
+
+export interface Milestone {
+  id: string;
+  title: string;
+  targetDate?: string;
+  completed: boolean;
+  completedAt?: number;
+}
+
+// Phase 3: Nutrition
+export interface NutritionItem {
+  id: string;
+  name: string;
+  category: 'snack' | 'meal' | 'drink';
+  emoji: string;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  notes?: string;
+  store?: string;
+}
