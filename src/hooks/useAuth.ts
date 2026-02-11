@@ -15,6 +15,10 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -23,6 +27,7 @@ export function useAuth() {
   }, []);
 
   const signIn = async () => {
+    if (!auth) return;
     try {
       await signInWithPopup(auth, provider);
     } catch (error) {
@@ -31,6 +36,7 @@ export function useAuth() {
   };
 
   const signOut = async () => {
+    if (!auth) return;
     try {
       await firebaseSignOut(auth);
     } catch (error) {

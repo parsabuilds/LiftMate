@@ -5,6 +5,7 @@ import { setDocument } from '../hooks/useFirestore';
 import { defaultChecklistItems } from './defaultChecklist';
 
 export async function seedUserData(user: User): Promise<void> {
+  if (!db) return;
   const profileRef = doc(db, `users/${user.uid}`);
   const profileSnap = await getDoc(profileRef);
 

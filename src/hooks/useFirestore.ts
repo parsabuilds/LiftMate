@@ -18,7 +18,7 @@ export function useDocument<T>(path: string | null) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!path) {
+    if (!path || !db) {
       setData(null);
       setLoading(false);
       return;
@@ -54,7 +54,7 @@ export function useCollection<T>(path: string | null, ...queryConstraints: Query
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!path) {
+    if (!path || !db) {
       setData([]);
       setLoading(false);
       return;
@@ -89,21 +89,25 @@ export function useCollection<T>(path: string | null, ...queryConstraints: Query
 }
 
 export async function setDocument(path: string, data: DocumentData) {
+  if (!db) return;
   const docRef = doc(db, path);
   await setDoc(docRef, data, { merge: true });
 }
 
 export async function updateDocument(path: string, data: DocumentData) {
+  if (!db) return;
   const docRef = doc(db, path);
   await updateDoc(docRef, data);
 }
 
 export async function deleteDocument(path: string) {
+  if (!db) return;
   const docRef = doc(db, path);
   await deleteDoc(docRef);
 }
 
 export async function addDocument(path: string, data: DocumentData) {
+  if (!db) throw new Error('Firestore not available');
   const collectionRef = collection(db, path);
   return await addDoc(collectionRef, data);
 }
