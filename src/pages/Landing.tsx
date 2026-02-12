@@ -195,12 +195,15 @@ export function Landing() {
           <div className="mt-16 md:mt-24 relative">
             <div className="absolute -inset-4 bg-gradient-to-t from-bg via-transparent to-transparent z-10 pointer-events-none"></div>
             <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-primary/10">
-              <img
-                src="/images/landing/hero.jpg"
-                alt="Athlete performing a deadlift in a modern gym with dramatic blue lighting"
-                className="w-full h-auto object-cover"
-                loading="eager"
-              />
+              <picture>
+                <source srcSet="/images/landing/hero.webp" type="image/webp" />
+                <img
+                  src="/images/landing/hero.jpg"
+                  alt="Athlete performing a deadlift in a modern gym with dramatic blue lighting"
+                  className="w-full h-auto object-cover"
+                  loading="eager"
+                />
+              </picture>
             </div>
           </div>
         </div>
@@ -342,12 +345,15 @@ export function Landing() {
       {/* Lifestyle Break Image */}
       <section className="px-6 py-8">
         <div className="max-w-6xl mx-auto relative rounded-2xl overflow-hidden border border-white/10">
-          <img
-            src="/images/landing/lifestyle.jpg"
-            alt="Person checking their LiftMate app between sets at the gym"
-            className="w-full h-64 md:h-96 object-cover"
-            loading="lazy"
-          />
+          <picture>
+            <source srcSet="/images/landing/lifestyle.webp" type="image/webp" />
+            <img
+              src="/images/landing/lifestyle.jpg"
+              alt="Person checking their LiftMate app between sets at the gym"
+              className="w-full h-64 md:h-96 object-cover"
+              loading="lazy"
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-r from-bg/90 via-bg/50 to-transparent flex items-center">
             <div className="px-8 md:px-16 max-w-lg">
               <h3 className="text-2xl md:text-3xl font-bold mb-3">Built for the gym floor</h3>
@@ -479,12 +485,15 @@ export function Landing() {
       {/* Flat-lay Image Break */}
       <section className="px-6 py-8">
         <div className="max-w-6xl mx-auto relative rounded-2xl overflow-hidden border border-white/10">
-          <img
-            src="/images/landing/flatlay.jpg"
-            alt="Flat-lay arrangement of gym essentials with blue-tinted lighting"
-            className="w-full h-48 md:h-72 object-cover"
-            loading="lazy"
-          />
+          <picture>
+            <source srcSet="/images/landing/flatlay.webp" type="image/webp" />
+            <img
+              src="/images/landing/flatlay.jpg"
+              alt="Flat-lay arrangement of gym essentials with blue-tinted lighting"
+              className="w-full h-48 md:h-72 object-cover"
+              loading="lazy"
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-t from-bg/80 to-transparent flex items-end">
             <div className="px-8 pb-8 flex flex-wrap gap-6 text-sm text-text/80">
               <span className="flex items-center gap-2"><i className="fa-solid fa-bolt text-primary"></i> Instant Setup</span>
@@ -530,12 +539,15 @@ export function Landing() {
       {/* Grip Feature Image + CTA */}
       <section className="relative py-24 md:py-36 px-6 overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="/images/landing/feature-grip.jpg"
-            alt="Close-up of hands gripping a barbell with chalk dust"
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <picture>
+            <source srcSet="/images/landing/feature-grip.webp" type="image/webp" />
+            <img
+              src="/images/landing/feature-grip.jpg"
+              alt="Close-up of hands gripping a barbell with chalk dust"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </picture>
           <div className="absolute inset-0 bg-bg/85 backdrop-blur-sm"></div>
         </div>
         <div className="relative max-w-2xl mx-auto text-center">
