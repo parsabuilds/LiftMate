@@ -63,12 +63,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 function AppContent() {
   const { user, profile, loading } = useAuthContext();
 
-  if (loading) {
-    return <RouteSpinner />;
-  }
-
+  // Show Landing immediately while auth is resolving — don't block
+  // unauthenticated visitors behind a spinner while Firebase checks session
   if (!user) {
     return <Landing />;
+  }
+
+  // Only show spinner once we know we have a user but are still loading profile
+  if (loading) {
+    return <RouteSpinner />;
   }
 
   if (!profile?.gender) {
