@@ -1,12 +1,10 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from 'firebase/auth';
-import { GoogleAuthProvider, reauthenticateWithPopup, deleteUser } from 'firebase/auth';
-import { collection, getDocs } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { useDocument, deleteDocument } from '../hooks/useFirestore';
 import { seedUserData } from '../data/seedData';
-import { db, firebaseInitError } from '../lib/firebase';
+import { db, firebaseReady } from '../lib/firebase';
 import type { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -20,14 +18,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-async function deleteCollection(path: string) {
-  if (!db) return;
-  const snapshot = await getDocs(collection(db, path));
-  await Promise.all(snapshot.docs.map((d) => deleteDocument(`${path}/${d.id}`)));
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  if (firebaseInitError) {
+  const { user, loading: authLoading, signIn, signOut, initError } = useAuth();
+  const deletingRef = useRef(false);
+  const [deleting, setDeleting] = useState(false);
+  const { data: profile, loading: profileLoading } = useDocument<UserProfile>(
+    user ? `users/${user.uid}` : null
+  );
+  const [seeding, setSeeding] = useState(false);
+
+  useEffect(() => {
+    if (user && !authLoading && !profileLoading && !profile && !seeding && !deletingRef.current) {
+      setSeeding(true);
+      seedUserData(user).finally(() => setSeeding(false));
+    }
+  }, [user, authLoading, profileLoading, profile, seeding]);
+
+  if (initError) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
@@ -47,21 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
-  const deletingRef = useRef(false);
-  const [deleting, setDeleting] = useState(false);
-  const { data: profile, loading: profileLoading } = useDocument<UserProfile>(
-    user ? `users/${user.uid}` : null
-  );
-  const [seeding, setSeeding] = useState(false);
-
-  useEffect(() => {
-    if (user && !authLoading && !profileLoading && !profile && !seeding && !deletingRef.current) {
-      setSeeding(true);
-      seedUserData(user).finally(() => setSeeding(false));
-    }
-  }, [user, authLoading, profileLoading, profile, seeding]);
-
   const deleteAccount = async () => {
     if (!user) return;
     const uid = user.uid;
@@ -69,7 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDeleting(true);
 
     try {
-      // Delete Firestore data FIRST while still authenticated
+      await firebaseReady;
+      if (!db) return;
+
+      const { collection, getDocs } = await import('firebase/firestore');
+
+      const deleteCollection = async (path: string) => {
+        const snapshot = await getDocs(collection(db!, path));
+        await Promise.all(snapshot.docs.map((d) => deleteDocument(`${path}/${d.id}`)));
+      };
+
       await Promise.all([
         deleteCollection(`users/${uid}/checklist`),
         deleteCollection(`users/${uid}/workoutLogs`),
@@ -78,7 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await deleteDocument(`users/${uid}/routine/current`);
       await deleteDocument(`users/${uid}`);
 
-      // Then delete the Firebase Auth account
+      const { deleteUser, GoogleAuthProvider, reauthenticateWithPopup } = await import('firebase/auth');
+
       try {
         await deleteUser(user);
       } catch (err: unknown) {

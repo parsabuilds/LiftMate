@@ -1,11 +1,12 @@
 import type { User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, firebaseReady } from '../lib/firebase';
 import { setDocument } from '../hooks/useFirestore';
 import { defaultChecklistItems } from './defaultChecklist';
 
 export async function seedUserData(user: User): Promise<void> {
+  await firebaseReady;
   if (!db) return;
+  const { doc, getDoc } = await import('firebase/firestore');
   const profileRef = doc(db, `users/${user.uid}`);
   const profileSnap = await getDoc(profileRef);
 
