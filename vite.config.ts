@@ -45,14 +45,6 @@ export default defineConfig({
               expiration: { maxEntries: 20, maxAgeSeconds: 30 * 24 * 60 * 60 },
             },
           },
-          {
-            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'firebase-api',
-              expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
-            },
-          },
         ],
       },
     }),
