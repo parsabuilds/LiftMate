@@ -12,9 +12,12 @@ export default function YouTubeThumb({ youtubeId, exerciseName, size = 'sm' }: Y
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`relative block overflow-hidden rounded-lg ${size === 'sm' ? 'w-20' : 'w-36'}`}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); setIsOpen(true); } }}
+        className={`relative block overflow-hidden rounded-lg cursor-pointer ${size === 'sm' ? 'w-20' : 'w-36'}`}
       >
         <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
           <img
@@ -35,7 +38,7 @@ export default function YouTubeThumb({ youtubeId, exerciseName, size = 'sm' }: Y
             </div>
           </div>
         </div>
-      </button>
+      </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={exerciseName}>
         <div className="w-full" style={{ aspectRatio: '16/9' }}>
