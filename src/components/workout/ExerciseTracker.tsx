@@ -191,13 +191,24 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         </div>
       </div>
 
+      {/* Coach recommendation */}
+      <div className="flex items-center gap-2.5 bg-primary/[0.08] border border-primary/20 rounded-xl px-3.5 py-2.5">
+        <span className="text-base leading-none">🎯</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-primary text-sm font-bold">
+            {exercise.sets} sets × {exercise.reps} reps
+          </p>
+          <p className="text-muted text-xs mt-0.5">Recommended target</p>
+        </div>
+      </div>
+
       {/* Set table */}
       <div className="bg-card/60 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
         <div className="grid grid-cols-4 gap-2 px-4 py-2.5 text-xs text-muted font-bold uppercase tracking-wider border-b border-white/[0.06]">
           <span>Set</span>
           <span>Reps</span>
           <span>Weight</span>
-          <span></span>
+          <span className="text-center">Log</span>
         </div>
         {sets.map((set, i) => (
           <div
@@ -214,7 +225,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
               onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
               disabled={set.completed}
               className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-              placeholder="0"
+              placeholder={exercise.reps}
             />
             <input
               type="number"
@@ -223,7 +234,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
               onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
               disabled={set.completed}
               className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-              placeholder="0"
+              placeholder="lbs"
             />
             <div className="flex items-center gap-1">
               {set.completed ? (
