@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
+import { WorkoutProvider } from './contexts/WorkoutContext';
 import { ToastProvider } from './components/ui/Toast';
 import { Navigation } from './components/Navigation';
 import { Landing } from './pages/Landing';
@@ -51,9 +52,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
+        <WorkoutProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </WorkoutProvider>
       </AuthProvider>
     </BrowserRouter>
   );

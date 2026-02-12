@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
 import { DaySelector } from '../components/workout/DaySelector';
@@ -8,10 +8,11 @@ import { ExerciseTracker } from '../components/workout/ExerciseTracker';
 import { CardioAbsSelector } from '../components/workout/CardioAbsSelector';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { useAuthContext } from '../contexts/AuthContext';
+import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { useCollection } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
-import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, RoutineDay, WorkoutLog } from '../types';
+import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, WorkoutLog } from '../types';
 
 const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'warmup', 'logging', 'cardioAbs', 'summary'];
 
@@ -23,14 +24,17 @@ export function Workout() {
   const { user, profile } = useAuthContext();
   const navigate = useNavigate();
 
-  const [currentStep, setCurrentStep] = useState<WorkoutStep>('daySelect');
-  const [selectedDayType, setSelectedDayType] = useState<DayType | null>(null);
-  const [routineDay, setRoutineDay] = useState<RoutineDay | null>(null);
-  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
-  const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
-  const [cardioChoice, setCardioChoice] = useState<CardioAbsChoice>('skip');
-  const [startTime] = useState(Date.now());
-  const [isRest, setIsRest] = useState(false);
+  const {
+    currentStep, setCurrentStep,
+    selectedDayType, setSelectedDayType,
+    routineDay, setRoutineDay,
+    selectedExercises, setSelectedExercises,
+    exerciseLogs, setExerciseLogs,
+    cardioChoice, setCardioChoice,
+    startTime,
+    isRest, setIsRest,
+    clearWorkout,
+  } = useWorkoutContext();
 
   const { data: previousWorkouts } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
@@ -126,6 +130,7 @@ export function Workout() {
       cardioOrAbs: cardioChoice,
     };
     await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
+    clearWorkout();
     navigate('/');
   };
 
@@ -168,8 +173,8 @@ export function Workout() {
           />
         </div>
 
-        {/* Back button */}
-        {currentStep !== 'daySelect' && currentStep !== 'summary' && (
+        {/* Back button (hidden during logging — ExerciseTracker has its own) */}
+        {currentStep !== 'daySelect' && currentStep !== 'summary' && currentStep !== 'logging' && (
           <button onClick={goBack} className="text-primary text-sm font-semibold mb-4 hover:underline flex items-center gap-1">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 19l-7-7 7-7" />
@@ -201,6 +206,7 @@ export function Workout() {
             exercises={selectedExercises}
             previousLogs={previousLogsForDay}
             onComplete={handleLoggingComplete}
+            onBack={goBack}
           />
         )}
 
