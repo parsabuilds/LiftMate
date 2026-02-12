@@ -41,9 +41,13 @@ export function Workout() {
   );
 
   const routine = useMemo(() => {
-    if (firestoreRoutine) return firestoreRoutine;
     const gender = profile?.gender ?? 'male';
-    return getRoutineByGender(gender);
+    // For default routines (mens-ppl / womens-fbs), always use the latest
+    // static data so exercise updates are reflected without re-onboarding.
+    if (!firestoreRoutine || firestoreRoutine.id === 'mens-ppl' || firestoreRoutine.id === 'womens-fbs') {
+      return getRoutineByGender(gender);
+    }
+    return firestoreRoutine;
   }, [firestoreRoutine, profile?.gender]);
 
   const { data: previousWorkouts } = useCollection<WorkoutLog>(

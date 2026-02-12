@@ -27,9 +27,11 @@ export function WorkoutCard() {
   );
 
   const routine = useMemo(() => {
-    if (firestoreRoutine) return firestoreRoutine;
     const gender = profile?.gender || 'male';
-    return getRoutineByGender(gender);
+    if (!firestoreRoutine || firestoreRoutine.id === 'mens-ppl' || firestoreRoutine.id === 'womens-fbs') {
+      return getRoutineByGender(gender);
+    }
+    return firestoreRoutine;
   }, [firestoreRoutine, profile?.gender]);
 
   const dayTypes = routine.days.map((d) => d.dayType);
