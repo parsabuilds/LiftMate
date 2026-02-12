@@ -56,21 +56,21 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
 
   return (
     <div>
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1 mb-1.5">
         {DAY_LABELS.map((label, i) => (
-          <div key={i} className="text-center text-xs text-muted font-medium">
+          <div key={i} className="text-center text-xs text-muted/70 font-bold uppercase">
             {label}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
         {calendarData.flat().map((cell) => {
-          const colorClass = cell.dayType ? (DAY_COLORS[cell.dayType] || 'bg-muted') : 'bg-slate-800';
+          const colorClass = cell.dayType ? (DAY_COLORS[cell.dayType] || 'bg-muted') : 'bg-white/[0.04]';
           return (
             <button
               key={cell.date}
               onClick={() => setTooltip(tooltip?.date === cell.date ? null : { date: cell.date, dayType: cell.dayType || 'rest' })}
-              className={`aspect-square rounded-sm ${colorClass} transition-opacity hover:opacity-80`}
+              className={`aspect-square rounded-md ${colorClass} transition-all hover:opacity-80 hover:scale-110`}
               aria-label={`${cell.date}: ${cell.dayType || 'rest'}`}
             />
           );
@@ -78,27 +78,27 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
       </div>
 
       {tooltip && (
-        <div className="mt-2 text-center text-sm text-muted">
-          {tooltip.date} — <span className="text-text capitalize">{tooltip.dayType}</span>
+        <div className="mt-3 text-center text-sm text-muted bg-card/60 border border-white/[0.06] rounded-xl py-2 px-3">
+          {tooltip.date} — <span className="text-text font-bold capitalize">{tooltip.dayType}</span>
         </div>
       )}
 
-      <div className="flex items-center gap-3 mt-3 justify-center">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-blue-500" />
-          <span className="text-xs text-muted">Push</span>
+      <div className="flex items-center gap-4 mt-4 justify-center">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md bg-blue-500" />
+          <span className="text-xs text-muted font-medium">Push</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-purple-500" />
-          <span className="text-xs text-muted">Pull</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md bg-purple-500" />
+          <span className="text-xs text-muted font-medium">Pull</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-green-500" />
-          <span className="text-xs text-muted">Legs</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md bg-green-500" />
+          <span className="text-xs text-muted font-medium">Legs</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-slate-800" />
-          <span className="text-xs text-muted">Rest</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md bg-white/[0.04]" />
+          <span className="text-xs text-muted font-medium">Rest</span>
         </div>
       </div>
     </div>

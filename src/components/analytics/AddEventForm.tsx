@@ -64,7 +64,7 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editingEvent ? 'Edit Event' : 'Add Event'}>
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Date"
           type="date"
@@ -73,12 +73,12 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
           required
         />
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-muted">Type</label>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted">Type</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as TimelineEvent['type'])}
-            className="min-h-[44px] bg-card border border-border rounded-xl px-4 py-2.5 text-text focus:outline-none focus:border-primary"
+            className="min-h-[44px] bg-card/60 border border-white/[0.06] rounded-xl px-4 py-2.5 text-text focus:outline-none focus:border-primary transition-colors"
           >
             {EVENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -94,14 +94,14 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
           required
         />
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-muted">Notes (optional)</label>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted">Notes (optional)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional details..."
             rows={3}
-            className="bg-card border border-border rounded-xl px-4 py-2.5 text-text placeholder:text-muted/50 focus:outline-none focus:border-primary resize-none"
+            className="bg-card/60 border border-white/[0.06] rounded-xl px-4 py-2.5 text-text placeholder:text-muted/50 focus:outline-none focus:border-primary resize-none transition-colors"
           />
         </div>
 

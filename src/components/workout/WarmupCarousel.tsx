@@ -39,16 +39,17 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
 
   return (
     <div className="flex flex-col items-center space-y-6">
-      <h3 className="text-text text-xl font-semibold text-center">{warmup.name}</h3>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Warmup {currentIndex + 1} of {warmups.length}</p>
+      <h3 className="text-text text-2xl font-black text-center tracking-tight">{warmup.name}</h3>
 
       <CircularTimer key={timerKey} duration={duration} onComplete={advance} size={160} />
 
-      <div className="flex gap-1.5 justify-center">
+      <div className="flex gap-2 justify-center">
         {warmups.map((_, i) => (
           <div
             key={i}
-            className={`w-2.5 h-2.5 rounded-full transition-colors ${
-              i === currentIndex ? 'bg-primary' : i < currentIndex ? 'bg-primary/40' : 'bg-border'
+            className={`w-2.5 h-2.5 rounded-full transition-all ${
+              i === currentIndex ? 'bg-primary scale-125' : i < currentIndex ? 'bg-primary/40' : 'bg-white/[0.08]'
             }`}
           />
         ))}

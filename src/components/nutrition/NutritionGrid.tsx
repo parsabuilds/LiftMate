@@ -18,12 +18,12 @@ export function NutritionGrid({ items, onSelect }: NutritionGridProps) {
         <button
           key={item.id}
           onClick={() => onSelect(item)}
-          className="bg-card border border-border rounded-2xl p-4 text-left hover:border-primary/50 active:bg-slate-700 transition-colors"
+          className="bg-card/60 border border-white/[0.06] rounded-2xl p-4 text-left backdrop-blur-sm hover:border-primary/30 active:scale-[0.97] transition-all"
         >
           <div className="text-4xl mb-2">{item.emoji}</div>
-          <div className="text-text text-sm font-medium truncate">{item.name}</div>
+          <div className="text-text text-sm font-bold truncate">{item.name}</div>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-primary/15 text-primary px-2 py-0.5 rounded-full font-bold">
               {item.calories} cal
             </span>
             <span className={`w-2 h-2 rounded-full ${categoryColors[item.category]}`} />

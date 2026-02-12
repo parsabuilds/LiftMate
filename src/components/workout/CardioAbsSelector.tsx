@@ -1,4 +1,3 @@
-import { Card } from '../ui/Card';
 import type { CardioAbsChoice } from '../../types';
 
 interface CardioAbsSelectorProps {
@@ -15,15 +14,19 @@ export function CardioAbsSelector({ onSelect }: CardioAbsSelectorProps) {
   return (
     <div className="space-y-3">
       {options.map((opt) => (
-        <Card key={opt.choice} onClick={() => onSelect(opt.choice)}>
-          <div className="flex items-center gap-4 py-2">
+        <button
+          key={opt.choice}
+          onClick={() => onSelect(opt.choice)}
+          className="w-full text-left bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm hover:border-primary/30 active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-4 py-1">
             <div className="text-3xl">{opt.emoji}</div>
             <div>
-              <h3 className="text-text font-semibold text-lg">{opt.title}</h3>
+              <h3 className="text-text font-bold text-lg">{opt.title}</h3>
               <p className="text-muted text-sm">{opt.subtitle}</p>
             </div>
           </div>
-        </Card>
+        </button>
       ))}
     </div>
   );

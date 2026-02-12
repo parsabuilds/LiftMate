@@ -1,11 +1,17 @@
 import { useMemo } from 'react';
-import { Card } from '../ui/Card';
 import type { WorkoutLog, UserProfile } from '../../types';
 
 interface StatsSummaryProps {
   workoutLogs: WorkoutLog[];
   profile: UserProfile | null;
 }
+
+const statMeta = [
+  { label: 'Total Workouts', color: '#3B82F6' },
+  { label: 'Current Streak', color: '#F59E0B' },
+  { label: 'Weekly Volume', color: '#10B981' },
+  { label: 'PRs This Month', color: '#A855F7' },
+];
 
 export function StatsSummary({ workoutLogs, profile }: StatsSummaryProps) {
   const stats = useMemo(() => {
@@ -45,28 +51,29 @@ export function StatsSummary({ workoutLogs, profile }: StatsSummaryProps) {
     return vol.toLocaleString();
   };
 
+  const values = [
+    String(workoutLogs.length),
+    `${profile?.currentStreak ?? 0} days`,
+    `${formatVolume(stats.weeklyVolume)} lbs`,
+    String(stats.prsThisMonth),
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-3 mb-4">
-      <Card>
-        <p className="text-muted text-sm">Total Workouts</p>
-        <p className="text-2xl font-bold text-text mt-1">{workoutLogs.length}</p>
-      </Card>
-      <Card>
-        <p className="text-muted text-sm">Current Streak</p>
-        <p className="text-2xl font-bold text-text mt-1">
-          {profile?.currentStreak ?? 0} days
-        </p>
-      </Card>
-      <Card>
-        <p className="text-muted text-sm">Weekly Volume</p>
-        <p className="text-2xl font-bold text-text mt-1">
-          {formatVolume(stats.weeklyVolume)} lbs
-        </p>
-      </Card>
-      <Card>
-        <p className="text-muted text-sm">PRs This Month</p>
-        <p className="text-2xl font-bold text-primary mt-1">{stats.prsThisMonth}</p>
-      </Card>
+    <div className="grid grid-cols-2 gap-3">
+      {statMeta.map((meta, i) => (
+        <div
+          key={meta.label}
+          className="relative overflow-hidden bg-card/60 border border-white/[0.06] rounded-2xl p-4 backdrop-blur-sm"
+        >
+          {/* Color accent line */}
+          <div
+            className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+            style={{ backgroundColor: meta.color }}
+          />
+          <p className="text-muted text-xs font-semibold uppercase tracking-wider">{meta.label}</p>
+          <p className="text-2xl font-black text-text mt-1.5 tracking-tight">{values[i]}</p>
+        </div>
+      ))}
     </div>
   );
 }

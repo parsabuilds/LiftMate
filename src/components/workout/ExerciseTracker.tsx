@@ -104,8 +104,8 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
     <div className="space-y-4 relative">
       {/* Rest timer overlay */}
       {showRest && (
-        <div className="fixed inset-0 bg-background/90 z-50 flex flex-col items-center justify-center gap-6">
-          <p className="text-muted text-sm uppercase tracking-wide">Rest</p>
+        <div className="fixed inset-0 bg-bg/95 z-50 flex flex-col items-center justify-center gap-6 backdrop-blur-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">Rest Timer</p>
           <CircularTimer duration={REST_SECONDS} onComplete={() => setShowRest(false)} size={180} />
           <Button variant="secondary" onClick={() => setShowRest(false)}>
             Skip Rest
@@ -114,9 +114,17 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
       )}
 
       {/* Progress */}
-      <p className="text-muted text-sm">
-        Exercise {currentIndex + 1}/{exercises.length}
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          Exercise {currentIndex + 1}/{exercises.length}
+        </p>
+        <div className="flex-1 h-1 bg-white/[0.06] rounded-full">
+          <div
+            className="h-1 bg-primary rounded-full transition-all"
+            style={{ width: `${((currentIndex + 1) / exercises.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
       {/* Exercise info */}
       <div className="flex items-start gap-3">
@@ -124,14 +132,14 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
           <YouTubeThumb youtubeId={exercise.youtubeId} exerciseName={exercise.name} size="md" />
         )}
         <div className="flex-1">
-          <h3 className="text-text font-semibold text-lg">{exercise.name}</h3>
+          <h3 className="text-text font-black text-xl tracking-tight">{exercise.name}</h3>
           {prevHint && <p className="text-muted text-xs mt-1">{prevHint}</p>}
         </div>
       </div>
 
       {/* Set table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-4 gap-2 px-3 py-2 text-xs text-muted uppercase tracking-wide border-b border-border">
+      <div className="bg-card/60 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+        <div className="grid grid-cols-4 gap-2 px-4 py-2.5 text-xs text-muted font-bold uppercase tracking-wider border-b border-white/[0.06]">
           <span>Set</span>
           <span>Reps</span>
           <span>Weight</span>
@@ -140,18 +148,18 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
         {sets.map((set, i) => (
           <div
             key={i}
-            className={`grid grid-cols-4 gap-2 px-3 py-2 items-center ${
-              set.completed ? 'opacity-60' : ''
+            className={`grid grid-cols-4 gap-2 px-4 py-2.5 items-center border-b border-white/[0.04] last:border-0 ${
+              set.completed ? 'bg-success/[0.04]' : ''
             }`}
           >
-            <span className="text-text text-sm font-medium">{set.setNumber}</span>
+            <span className="text-text text-sm font-bold">{set.setNumber}</span>
             <input
               type="number"
               inputMode="numeric"
               value={set.reps || ''}
               onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
               disabled={set.completed}
-              className="bg-background border border-border rounded-lg px-2 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary"
+              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder="0"
             />
             <input
@@ -160,7 +168,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
               value={set.weight || ''}
               onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
               disabled={set.completed}
-              className="bg-background border border-border rounded-lg px-2 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary"
+              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder="0"
             />
             <div className="flex items-center gap-1">
@@ -175,7 +183,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
                 <button
                   onClick={() => confirmSet(i)}
                   disabled={set.reps === 0 || set.weight === 0}
-                  className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6 9 17l-5-5" />
@@ -187,7 +195,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete }: Exercis
         ))}
       </div>
 
-      <button onClick={addSet} className="text-primary text-sm hover:underline">
+      <button onClick={addSet} className="text-primary text-sm font-bold hover:underline">
         + Add Set
       </button>
 

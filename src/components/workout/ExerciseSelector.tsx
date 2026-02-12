@@ -35,10 +35,10 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {muscleGroups.map((mg) => (
         <div key={mg.name}>
-          <h3 className="text-text font-semibold mb-3">Choose exercises for {mg.name}</h3>
+          <h3 className="text-text font-bold text-lg mb-3">Choose exercises for <span className="text-primary">{mg.name}</span></h3>
           <div className="grid grid-cols-2 gap-3">
             {mg.exercises.map((exercise) => {
               const isSelected = selections[mg.name]?.some((e) => e.id === exercise.id) ?? false;
@@ -46,10 +46,11 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
                 <button
                   key={exercise.id}
                   onClick={() => toggleExercise(mg.name, exercise)}
-                  className={`
-                    bg-card border-2 rounded-xl p-3 text-left transition-colors
-                    ${isSelected ? 'border-primary' : 'border-border'}
-                  `}
+                  className={`relative bg-card/60 border-2 rounded-2xl p-3 text-left transition-all backdrop-blur-sm ${
+                    isSelected
+                      ? 'border-primary shadow-lg shadow-primary/10'
+                      : 'border-white/[0.06] hover:border-white/10'
+                  }`}
                 >
                   {exercise.youtubeId && (
                     <div className="mb-2">
@@ -60,12 +61,12 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
                       />
                     </div>
                   )}
-                  <p className="text-text text-sm font-medium leading-tight">{exercise.name}</p>
-                  <p className="text-muted text-xs mt-0.5">
+                  <p className="text-text text-sm font-bold leading-tight">{exercise.name}</p>
+                  <p className="text-muted text-xs mt-1">
                     {exercise.sets} sets x {exercise.reps}
                   </p>
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M20 6 9 17l-5-5" />
                       </svg>

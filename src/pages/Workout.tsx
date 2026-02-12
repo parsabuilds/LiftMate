@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
-import { Card } from '../components/ui/Card';
 import { DaySelector } from '../components/workout/DaySelector';
 import { ExerciseSelector } from '../components/workout/ExerciseSelector';
 import { WarmupCarousel } from '../components/workout/WarmupCarousel';
@@ -58,18 +57,24 @@ export function Workout() {
   // Rest day
   if (isRest) {
     return (
-      <Layout title="Rest Day">
-        <Card className="text-center py-8">
-          <div className="text-5xl mb-4">😴</div>
-          <h2 className="text-xl font-semibold text-text mb-2">Enjoy Your Rest Day</h2>
-          <p className="text-muted">Recovery is when your muscles grow. Take it easy today!</p>
-          <button
-            onClick={() => { setIsRest(false); setCurrentStep('daySelect'); }}
-            className="mt-4 text-primary text-sm hover:underline"
-          >
-            &larr; Choose a different day
-          </button>
-        </Card>
+      <Layout>
+        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
+        </div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black text-text tracking-tight mb-6">Rest Day</h1>
+          <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-8 text-center backdrop-blur-sm">
+            <div className="text-5xl mb-4">{'\uD83D\uDE34'}</div>
+            <h2 className="text-xl font-bold text-text mb-2">Enjoy Your Rest Day</h2>
+            <p className="text-muted">Recovery is when your muscles grow. Take it easy today!</p>
+            <button
+              onClick={() => { setIsRest(false); setCurrentStep('daySelect'); }}
+              className="mt-4 text-primary text-sm font-semibold hover:underline"
+            >
+              {'\u2190'} Choose a different day
+            </button>
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -145,60 +150,73 @@ export function Workout() {
   };
 
   return (
-    <Layout title={titles[currentStep]}>
-      {/* Progress bar */}
-      <div className="h-1 bg-border rounded-full mb-4 -mt-2">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-300"
-          style={{ width: `${progressPct}%` }}
-        />
+    <Layout>
+      {/* Ambient glow */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
       </div>
 
-      {/* Back button */}
-      {currentStep !== 'daySelect' && currentStep !== 'summary' && (
-        <button onClick={goBack} className="text-primary text-sm mb-4 hover:underline">
-          &larr; Back
-        </button>
-      )}
+      <div className="relative z-10">
+        {/* Page header */}
+        <h1 className="text-3xl font-black text-text tracking-tight mb-2">{titles[currentStep]}</h1>
 
-      {currentStep === 'daySelect' && (
-        <>
-          <p className="text-muted mb-4">Choose your workout for today</p>
-          <DaySelector gender={profile?.gender ?? 'male'} onSelectDay={handleDaySelect} />
-        </>
-      )}
+        {/* Progress bar */}
+        <div className="h-1.5 bg-border/50 rounded-full mb-5">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-300"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
 
-      {currentStep === 'exerciseSelect' && routineDay && (
-        <ExerciseSelector
-          muscleGroups={routineDay.muscleGroups}
-          onComplete={handleExerciseSelect}
-        />
-      )}
+        {/* Back button */}
+        {currentStep !== 'daySelect' && currentStep !== 'summary' && (
+          <button onClick={goBack} className="text-primary text-sm font-semibold mb-4 hover:underline flex items-center gap-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        )}
 
-      {currentStep === 'warmup' && routineDay && (
-        <WarmupCarousel warmups={routineDay.warmups} onComplete={handleWarmupComplete} />
-      )}
+        {currentStep === 'daySelect' && (
+          <>
+            <p className="text-muted mb-4">Choose your workout for today</p>
+            <DaySelector gender={profile?.gender ?? 'male'} onSelectDay={handleDaySelect} />
+          </>
+        )}
 
-      {currentStep === 'logging' && (
-        <ExerciseTracker
-          exercises={selectedExercises}
-          previousLogs={previousLogsForDay}
-          onComplete={handleLoggingComplete}
-        />
-      )}
+        {currentStep === 'exerciseSelect' && routineDay && (
+          <ExerciseSelector
+            muscleGroups={routineDay.muscleGroups}
+            onComplete={handleExerciseSelect}
+          />
+        )}
 
-      {currentStep === 'cardioAbs' && (
-        <CardioAbsSelector onSelect={handleCardioSelect} />
-      )}
+        {currentStep === 'warmup' && routineDay && (
+          <WarmupCarousel warmups={routineDay.warmups} onComplete={handleWarmupComplete} />
+        )}
 
-      {currentStep === 'summary' && (
-        <WorkoutSummary
-          duration={duration}
-          exercises={exerciseLogs}
-          prs={prs}
-          onSave={handleSave}
-        />
-      )}
+        {currentStep === 'logging' && (
+          <ExerciseTracker
+            exercises={selectedExercises}
+            previousLogs={previousLogsForDay}
+            onComplete={handleLoggingComplete}
+          />
+        )}
+
+        {currentStep === 'cardioAbs' && (
+          <CardioAbsSelector onSelect={handleCardioSelect} />
+        )}
+
+        {currentStep === 'summary' && (
+          <WorkoutSummary
+            duration={duration}
+            exercises={exerciseLogs}
+            prs={prs}
+            onSave={handleSave}
+          />
+        )}
+      </div>
     </Layout>
   );
 }

@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
 import { useAuthContext } from '../contexts/AuthContext';
 import { Layout } from '../components/ui/Layout';
-import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import { useCollection, setDocument, deleteDocument, addDocument } from '../hooks/useFirestore';
-import { db } from '../lib/firebase';
+
 import type { Routine, ChecklistItem } from '../types';
 
 interface CustomRoutine extends Routine {
@@ -22,17 +20,14 @@ export function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Editable display name
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
 
-  // Custom routines
   const { data: customRoutines } = useCollection<CustomRoutine>(
     user ? `users/${user.uid}/routines` : null
   );
 
-  // Checklist management
   const { data: checklistItems } = useCollection<ChecklistItem>(
     user ? `users/${user.uid}/checklist` : null
   );
@@ -40,8 +35,7 @@ export function Settings() {
   const [newChecklistEmoji, setNewChecklistEmoji] = useState('');
   const [newChecklistLabel, setNewChecklistLabel] = useState('');
 
-  // Export
-  const [exporting, setExporting] = useState(false);
+
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -76,7 +70,7 @@ export function Settings() {
     if (!user || !newChecklistLabel.trim()) return;
     await addDocument(`users/${user.uid}/checklist`, {
       label: newChecklistLabel.trim(),
-      emoji: newChecklistEmoji.trim() || '✅',
+      emoji: newChecklistEmoji.trim() || '\u2705',
       order: checklistItems.length,
     });
     setNewChecklistLabel('');
@@ -89,199 +83,213 @@ export function Settings() {
     await deleteDocument(`users/${user.uid}/checklist/${itemId}`);
   };
 
-  const handleExport = async () => {
-    if (!user || !db) return;
-    setExporting(true);
-    try {
-      const collections = ['workoutLogs', 'dailyLogs', 'checklist', 'goals', 'routines'];
-      const exportData: Record<string, unknown> = { profile };
-
-      for (const col of collections) {
-        const snapshot = await getDocs(collection(db, `users/${user.uid}/${col}`));
-        exportData[col] = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `liftmate-export-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setExporting(false);
-    }
-  };
+  const sectionCard = "bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm";
 
   return (
-    <Layout title="Settings">
-      {/* Profile Card */}
-      <Card className="mb-4">
-        <div className="flex items-center gap-4">
-          {user?.photoURL && (
-            <img
-              src={user.photoURL}
-              alt="Profile"
-              className="w-14 h-14 rounded-full"
-              referrerPolicy="no-referrer"
-            />
-          )}
-          <div className="flex-1">
-            {editingName ? (
-              <div className="flex gap-2 items-center">
-                <Input
-                  value={nameValue}
-                  onChange={e => setNameValue(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-                  autoFocus
-                  className="text-sm"
-                />
-                <Button size="sm" onClick={handleSaveName} loading={savingName}>Save</Button>
-                <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>Cancel</Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h3 className="text-text font-semibold">{profile?.displayName || user?.displayName}</h3>
-                <button onClick={handleEditName} className="text-primary text-xs">Edit</button>
-              </div>
-            )}
-            <p className="text-muted text-sm">{profile?.email || user?.email}</p>
-            {profile?.gender && (
-              <p className="text-muted text-xs capitalize">{profile.gender}</p>
-            )}
-          </div>
-        </div>
-      </Card>
+    <Layout>
+      {/* Ambient glow */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
+      </div>
 
-      {/* Routine Management */}
-      <Card title="Routines" className="mb-4">
-        <div className="space-y-2 text-sm mb-3">
-          <div className="flex justify-between">
-            <span className="text-muted">Default Routine</span>
-            <span className="text-text">Push/Pull/Legs ({profile?.gender || 'male'})</span>
-          </div>
+      <div className="relative z-10 space-y-4">
+        {/* Page header */}
+        <div className="mb-1">
+          <h1 className="text-3xl font-black text-text tracking-tight">Settings</h1>
+          <p className="text-muted text-sm mt-1">Manage your account and preferences</p>
         </div>
 
-        {customRoutines.length > 0 && (
-          <div className="space-y-2 mb-3">
-            <p className="text-muted text-xs uppercase tracking-wider">Custom Routines</p>
-            {customRoutines.map(r => (
-              <div key={r.id} className="flex items-center justify-between py-2 border-t border-border">
-                <div>
-                  <p className="text-text text-sm font-medium">{r.name || r.id}</p>
-                  <p className="text-muted text-xs">{r.days.length} day{r.days.length !== 1 ? 's' : ''}</p>
+        {/* Profile Card */}
+        <div className={sectionCard}>
+          <div className="flex items-center gap-4">
+            {user?.photoURL && (
+              <img
+                src={user.photoURL}
+                alt="Profile"
+                className="w-14 h-14 rounded-full border-2 border-white/10"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <div className="flex-1">
+              {editingName ? (
+                <div className="flex gap-2 items-center">
+                  <Input
+                    value={nameValue}
+                    onChange={e => setNameValue(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                    autoFocus
+                    className="text-sm"
+                  />
+                  <Button size="sm" onClick={handleSaveName} loading={savingName}>Save</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>Cancel</Button>
                 </div>
-                <button
-                  onClick={() => handleDeleteRoutine(r.id)}
-                  className="text-red-400 text-sm min-h-[44px] px-2"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="text-text font-bold">{profile?.displayName || user?.displayName}</h3>
+                  <button onClick={handleEditName} className="text-primary text-xs font-semibold">Edit</button>
+                </div>
+              )}
+              <p className="text-muted text-sm">{profile?.email || user?.email}</p>
+              {profile?.gender && (
+                <p className="text-muted text-xs capitalize">{profile.gender}</p>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
-        <Button variant="secondary" fullWidth onClick={() => navigate('/routine-builder')}>
-          Create Custom Routine
-        </Button>
-      </Card>
+        {/* Routines */}
+        <div className={sectionCard}>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+            <h3 className="text-text font-bold text-base">Routines</h3>
+          </div>
 
-      {/* Nutrition */}
-      <Card className="mb-4">
+          <div className="space-y-2 text-sm mb-3">
+            <div className="flex justify-between">
+              <span className="text-muted">Default Routine</span>
+              <span className="text-text font-medium">Push/Pull/Legs ({profile?.gender || 'male'})</span>
+            </div>
+          </div>
+
+          {customRoutines.length > 0 && (
+            <div className="space-y-2 mb-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted">Custom Routines</p>
+              {customRoutines.map(r => (
+                <div key={r.id} className="flex items-center justify-between py-2 border-t border-white/[0.04]">
+                  <div>
+                    <p className="text-text text-sm font-medium">{r.name || r.id}</p>
+                    <p className="text-muted text-xs">{r.days.length} day{r.days.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteRoutine(r.id)}
+                    className="text-red-400 text-sm min-h-[44px] px-2 font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Button variant="secondary" fullWidth onClick={() => navigate('/routine-builder')}>
+            Create Custom Routine
+          </Button>
+        </div>
+
+        {/* Nutrition */}
         <button
           onClick={() => navigate('/nutrition')}
-          className="flex items-center justify-between w-full min-h-[44px]"
+          className={`${sectionCard} w-full text-left`}
         >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🍎</span>
-            <div className="text-left">
-              <p className="text-text font-medium">Nutrition Ideas</p>
-              <p className="text-muted text-xs">Snacks, meals & macros</p>
-            </div>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
-      </Card>
-
-      {/* Checklist Management */}
-      <Card title="Daily Checklist" className="mb-4">
-        {checklistItems.length > 0 ? (
-          <div className="space-y-1 mb-3">
-            {checklistItems.map(item => (
-              <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                <span className="text-text text-sm">{item.emoji} {item.label}</span>
-                <button
-                  onClick={() => handleDeleteChecklistItem(item.id)}
-                  className="text-red-400 text-xs min-h-[44px] px-2"
-                >
-                  Remove
-                </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{'\uD83C\uDF4E'}</span>
+              <div>
+                <p className="text-text font-bold">Nutrition Ideas</p>
+                <p className="text-muted text-xs">Snacks, meals & macros</p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted text-sm mb-3">No checklist items yet.</p>
-        )}
-
-        {showAddChecklist ? (
-          <div className="space-y-2 border-t border-border pt-2">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Emoji"
-                value={newChecklistEmoji}
-                onChange={e => setNewChecklistEmoji(e.target.value)}
-                className="w-16 text-center"
-                maxLength={4}
-              />
-              <Input
-                placeholder="Label"
-                value={newChecklistLabel}
-                onChange={e => setNewChecklistLabel(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()}
-                className="flex-1"
-                autoFocus
-              />
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" fullWidth onClick={() => setShowAddChecklist(false)}>Cancel</Button>
-              <Button size="sm" fullWidth onClick={handleAddChecklistItem} disabled={!newChecklistLabel.trim()}>Add</Button>
-            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </div>
-        ) : (
-          <Button variant="secondary" fullWidth size="sm" onClick={() => setShowAddChecklist(true)}>
-            + Add Item
-          </Button>
-        )}
-      </Card>
+        </button>
 
-      {/* Data Export */}
-      <Card title="Data" className="mb-4">
-        <Button variant="secondary" fullWidth onClick={handleExport} loading={exporting}>
-          Export Data as JSON
-        </Button>
-      </Card>
+        {/* Checklist */}
+        <div className={sectionCard}>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
+            <h3 className="text-text font-bold text-base">Daily Checklist</h3>
+          </div>
 
-      {/* App Info */}
-      <Card title="App Info" className="mb-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          {checklistItems.length > 0 ? (
+            <div className="space-y-1 mb-3">
+              {checklistItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+                  <span className="text-text text-sm">{item.emoji} {item.label}</span>
+                  <button
+                    onClick={() => handleDeleteChecklistItem(item.id)}
+                    className="text-red-400 text-xs min-h-[44px] px-2 font-medium"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted text-sm mb-3">No checklist items yet.</p>
+          )}
+
+          {showAddChecklist ? (
+            <div className="space-y-2 border-t border-white/[0.04] pt-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Emoji"
+                  value={newChecklistEmoji}
+                  onChange={e => setNewChecklistEmoji(e.target.value)}
+                  className="w-16 text-center"
+                  maxLength={4}
+                />
+                <Input
+                  placeholder="Label"
+                  value={newChecklistLabel}
+                  onChange={e => setNewChecklistLabel(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()}
+                  className="flex-1"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" fullWidth onClick={() => setShowAddChecklist(false)}>Cancel</Button>
+                <Button size="sm" fullWidth onClick={handleAddChecklistItem} disabled={!newChecklistLabel.trim()}>Add</Button>
+              </div>
+            </div>
+          ) : (
+            <Button variant="secondary" fullWidth size="sm" onClick={() => setShowAddChecklist(true)}>
+              + Add Item
+            </Button>
+          )}
+        </div>
+
+        {/* App Info */}
+        <div className={sectionCard}>
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 bg-muted/10 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </div>
+            <h3 className="text-text font-bold text-base">App Info</h3>
+          </div>
+          <div className="flex justify-between text-sm">
             <span className="text-muted">Version</span>
-            <span className="text-text">1.0.0</span>
+            <span className="text-text font-medium">1.0.0</span>
           </div>
         </div>
-      </Card>
 
-      {/* Sign Out / Delete */}
-      <div className="space-y-3">
-        <Button variant="danger" fullWidth onClick={signOut}>
-          Sign Out
-        </Button>
-        <Button variant="ghost" fullWidth onClick={() => setShowDeleteModal(true)}>
-          <span className="text-red-400">Delete Account</span>
-        </Button>
+        {/* Sign Out / Delete */}
+        <div className="space-y-3 pt-2">
+          <Button variant="danger" fullWidth onClick={signOut}>
+            Sign Out
+          </Button>
+          <Button variant="ghost" fullWidth onClick={() => setShowDeleteModal(true)}>
+            <span className="text-red-400">Delete Account</span>
+          </Button>
+        </div>
       </div>
 
       <Modal isOpen={showDeleteModal} onClose={() => !deleting && setShowDeleteModal(false)} title="Delete Account">
