@@ -4,6 +4,7 @@ import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
+import { useAuthContext } from '../../contexts/AuthContext';
 import type { SetRow } from '../../contexts/WorkoutContext';
 import type { Exercise, ExerciseLog, SetLog } from '../../types';
 
@@ -13,8 +14,6 @@ interface ExerciseTrackerProps {
   onComplete: (logs: ExerciseLog[]) => void;
   onBack: () => void;
 }
-
-const REST_SECONDS = 90;
 
 function initSets(exercise: Exercise): SetRow[] {
   return Array.from({ length: exercise.sets }, (_, i) => ({
@@ -27,6 +26,9 @@ function initSets(exercise: Exercise): SetRow[] {
 }
 
 export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }: ExerciseTrackerProps) {
+  const { profile } = useAuthContext();
+  const restSeconds = profile?.restSeconds ?? 90;
+
   const {
     currentExerciseIndex,
     setCurrentExerciseIndex,
@@ -150,7 +152,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
       {showRest && (
         <div className="fixed inset-0 bg-bg/95 z-50 flex flex-col items-center justify-center gap-6 backdrop-blur-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">Rest Timer</p>
-          <CircularTimer duration={REST_SECONDS} onComplete={() => setShowRest(false)} size={180} />
+          <CircularTimer duration={restSeconds} onComplete={() => setShowRest(false)} size={180} />
           <Button variant="secondary" onClick={() => setShowRest(false)}>
             Skip Rest
           </Button>

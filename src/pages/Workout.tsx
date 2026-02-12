@@ -9,10 +9,10 @@ import { CardioAbsSelector } from '../components/workout/CardioAbsSelector';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
-import { useCollection } from '../hooks/useFirestore';
+import { useCollection, useDocument } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
-import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, WorkoutLog } from '../types';
+import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, WorkoutLog, Routine } from '../types';
 
 const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'warmup', 'logging', 'cardioAbs', 'summary'];
 
@@ -36,6 +36,16 @@ export function Workout() {
     clearWorkout,
   } = useWorkoutContext();
 
+  const { data: firestoreRoutine } = useDocument<Routine>(
+    user ? `users/${user.uid}/routine/current` : null
+  );
+
+  const routine = useMemo(() => {
+    if (firestoreRoutine) return firestoreRoutine;
+    const gender = profile?.gender ?? 'male';
+    return getRoutineByGender(gender);
+  }, [firestoreRoutine, profile?.gender]);
+
   const { data: previousWorkouts } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
   );
@@ -57,6 +67,8 @@ export function Workout() {
   }, [exerciseLogs]);
 
   const duration = Math.floor((Date.now() - startTime) / 1000);
+
+  const warmupsEnabled = profile?.showWarmups !== false;
 
   // Rest day
   if (isRest) {
@@ -88,8 +100,6 @@ export function Workout() {
       setIsRest(true);
       return;
     }
-    const gender = profile?.gender ?? 'male';
-    const routine = getRoutineByGender(gender);
     const found = routine.days.find((d) => d.dayType === day);
     if (found) {
       setSelectedDayType(day);
@@ -101,7 +111,11 @@ export function Workout() {
   const handleExerciseSelect = (selected: Record<string, Exercise[]>) => {
     const flat = Object.values(selected).flat();
     setSelectedExercises(flat);
-    setCurrentStep('warmup');
+    if (warmupsEnabled) {
+      setCurrentStep('warmup');
+    } else {
+      setCurrentStep('logging');
+    }
   };
 
   const handleWarmupComplete = () => {
@@ -135,6 +149,10 @@ export function Workout() {
   };
 
   const goBack = () => {
+    if (currentStep === 'logging' && !warmupsEnabled) {
+      setCurrentStep('exerciseSelect');
+      return;
+    }
     const idx = stepIndex(currentStep);
     if (idx > 0) {
       setCurrentStep(STEP_ORDER[idx - 1]);
@@ -186,7 +204,7 @@ export function Workout() {
         {currentStep === 'daySelect' && (
           <>
             <p className="text-muted mb-4">Choose your workout for today</p>
-            <DaySelector gender={profile?.gender ?? 'male'} onSelectDay={handleDaySelect} />
+            <DaySelector routine={routine} onSelectDay={handleDaySelect} />
           </>
         )}
 

@@ -5,7 +5,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
-import { useCollection, setDocument, deleteDocument, addDocument } from '../hooks/useFirestore';
+import { useCollection, useDocument, setDocument, deleteDocument, addDocument } from '../hooks/useFirestore';
 
 import type { Routine, ChecklistItem } from '../types';
 
@@ -23,6 +23,10 @@ export function Settings() {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
+
+  const { data: currentRoutine } = useDocument<Routine>(
+    user ? `users/${user.uid}/routine/current` : null
+  );
 
   const { data: customRoutines } = useCollection<CustomRoutine>(
     user ? `users/${user.uid}/routines` : null
@@ -137,6 +141,67 @@ export function Settings() {
           </div>
         </div>
 
+        {/* Workout Preferences */}
+        <div className={sectionCard}>
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </div>
+            <h3 className="text-text font-bold text-base">Workout Preferences</h3>
+          </div>
+
+          {/* Warmup Toggle */}
+          <div className="flex items-center justify-between py-2 mb-3">
+            <div>
+              <p className="text-text text-sm font-medium">Show Warmups</p>
+              <p className="text-muted text-xs">3-5 min warmup before workouts</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!user) return;
+                const newVal = !(profile?.showWarmups !== false);
+                await setDocument(`users/${user.uid}`, { showWarmups: newVal });
+              }}
+              className={`relative w-12 h-7 rounded-full transition-colors ${
+                profile?.showWarmups !== false ? 'bg-primary' : 'bg-white/10'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                profile?.showWarmups !== false ? 'translate-x-5' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
+
+          {/* Rest Timer */}
+          <div className="mb-1">
+            <p className="text-text text-sm font-medium mb-2">Rest Between Sets</p>
+            <div className="flex gap-2">
+              {([30, 60, 90, 120, 180] as const).map((sec) => {
+                const active = (profile?.restSeconds ?? 90) === sec;
+                return (
+                  <button
+                    key={sec}
+                    onClick={async () => {
+                      if (!user) return;
+                      await setDocument(`users/${user.uid}`, { restSeconds: sec });
+                    }}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                      active
+                        ? 'bg-primary text-white'
+                        : 'bg-card/60 border border-white/[0.06] text-muted hover:border-white/10'
+                    }`}
+                  >
+                    {sec}s
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {/* Routines */}
         <div className={sectionCard}>
           <div className="flex items-center gap-2.5 mb-4">
@@ -153,8 +218,10 @@ export function Settings() {
 
           <div className="space-y-2 text-sm mb-3">
             <div className="flex justify-between">
-              <span className="text-muted">Default Routine</span>
-              <span className="text-text font-medium">Push/Pull/Legs ({profile?.gender || 'male'})</span>
+              <span className="text-muted">Active Routine</span>
+              <span className="text-text font-medium">
+                {currentRoutine?.gender ? `Default (${currentRoutine.days.length}-day)` : currentRoutine ? `Custom (${currentRoutine.days.length}-day)` : `Default (${profile?.gender || 'male'})`}
+              </span>
             </div>
           </div>
 

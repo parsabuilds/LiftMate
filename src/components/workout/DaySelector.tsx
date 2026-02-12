@@ -1,8 +1,7 @@
-import { getRoutineByGender } from '../../data/defaultRoutines';
-import type { DayType } from '../../types';
+import type { DayType, Routine } from '../../types';
 
 interface DaySelectorProps {
-  gender: 'male' | 'female';
+  routine: Routine;
   onSelectDay: (day: DayType | 'rest') => void;
 }
 
@@ -15,8 +14,7 @@ const iconMap: Record<string, string> = {
   'Lower Body - Quad Focus': '\uD83E\uDDB5',
 };
 
-export function DaySelector({ gender, onSelectDay }: DaySelectorProps) {
-  const routine = getRoutineByGender(gender);
+export function DaySelector({ routine, onSelectDay }: DaySelectorProps) {
   const dayOptions = routine.days.map((day) => ({
     dayType: day.dayType,
     muscles: day.muscleGroups.map((mg) => mg.name),

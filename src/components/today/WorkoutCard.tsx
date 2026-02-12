@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
-import { useCollection } from '../../hooks/useFirestore';
+import { useCollection, useDocument } from '../../hooks/useFirestore';
 import { getRoutineByGender } from '../../data/defaultRoutines';
-import type { WorkoutLog } from '../../types';
+import type { WorkoutLog, Routine } from '../../types';
 
 export function WorkoutCard() {
   const navigate = useNavigate();
@@ -21,9 +22,16 @@ export function WorkoutCard() {
     user ? `users/${user.uid}/workoutLogs` : null
   );
 
-  // Get routine for this user's gender
-  const gender = profile?.gender || 'male';
-  const routine = getRoutineByGender(gender);
+  const { data: firestoreRoutine } = useDocument<Routine>(
+    user ? `users/${user.uid}/routine/current` : null
+  );
+
+  const routine = useMemo(() => {
+    if (firestoreRoutine) return firestoreRoutine;
+    const gender = profile?.gender || 'male';
+    return getRoutineByGender(gender);
+  }, [firestoreRoutine, profile?.gender]);
+
   const dayTypes = routine.days.map((d) => d.dayType);
 
   // Find today's completed workout (if any)

@@ -10,6 +10,8 @@ export interface UserProfile {
   email: string;
   photoURL: string;
   gender?: 'male' | 'female';
+  showWarmups?: boolean;
+  restSeconds?: number;
   createdAt: number;
   currentStreak: number;
   longestStreak: number;
@@ -44,7 +46,7 @@ export interface Warmup {
 
 export interface Routine {
   id: string;
-  gender: 'male' | 'female';
+  gender?: 'male' | 'female';
   days: RoutineDay[];
 }
 
