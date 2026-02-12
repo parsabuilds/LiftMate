@@ -162,7 +162,7 @@ export function Landing() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 text-sm text-primary font-medium mb-8">
               <i className="fa-solid fa-fire text-xs"></i>
-              Free forever. No credit card required.
+              Free. No credit card required.
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
               Track Lifts.<br />
@@ -554,7 +554,7 @@ export function Landing() {
             Start Tracking Free
           </button>
           <p className="text-muted/60 text-sm mt-6 flex items-center justify-center gap-4">
-            <span className="flex items-center gap-1.5"><i className="fa-solid fa-check text-success text-xs"></i> Free forever</span>
+            <span className="flex items-center gap-1.5"><i className="fa-solid fa-check text-success text-xs"></i> Free</span>
             <span className="flex items-center gap-1.5"><i className="fa-solid fa-check text-success text-xs"></i> No credit card</span>
             <span className="flex items-center gap-1.5"><i className="fa-solid fa-check text-success text-xs"></i> No spam</span>
           </p>
