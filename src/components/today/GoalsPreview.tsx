@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useCollection } from '../../hooks/useFirestore';
 import type { Goal } from '../../types';
@@ -71,12 +72,12 @@ export function GoalsPreview() {
           </div>
           <h3 className="text-text font-bold text-base">Goals</h3>
         </div>
-        <a
-          href="/goals"
+        <Link
+          to="/goals"
           className="text-xs font-semibold text-primary hover:text-blue-400 transition-colors uppercase tracking-wider"
         >
           View All
-        </a>
+        </Link>
       </div>
 
       {/* Goal items */}
