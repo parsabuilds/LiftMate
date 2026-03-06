@@ -42,7 +42,7 @@ const defaultState: WorkoutState = {
 
 function loadState(): WorkoutState | null {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as WorkoutState;
   } catch {
     // private browsing or corrupt data
@@ -52,7 +52,7 @@ function loadState(): WorkoutState | null {
 
 function saveState(state: WorkoutState) {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // ignore
   }
@@ -60,7 +60,7 @@ function saveState(state: WorkoutState) {
 
 function removeState() {
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
     // ignore
   }

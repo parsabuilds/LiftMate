@@ -34,6 +34,9 @@ export function Workout() {
     startTime,
     isRest, setIsRest,
     clearWorkout,
+    setCurrentExerciseIndex,
+    setInProgressLogs,
+    setCurrentSets,
   } = useWorkoutContext();
 
   const { data: firestoreRoutine } = useDocument<Routine>(
@@ -155,6 +158,25 @@ export function Workout() {
   const goBack = () => {
     if (currentStep === 'logging' && !warmupsEnabled) {
       setCurrentStep('exerciseSelect');
+      return;
+    }
+    // When going back from cardioAbs to logging, restore exercise state from exerciseLogs
+    if (currentStep === 'cardioAbs' && exerciseLogs.length > 0) {
+      const lastIndex = selectedExercises.length - 1;
+      // Put all but the last exercise into inProgressLogs, restore last exercise's sets for editing
+      setInProgressLogs(exerciseLogs.slice(0, -1));
+      setCurrentExerciseIndex(lastIndex);
+      const lastLog = exerciseLogs[exerciseLogs.length - 1];
+      if (lastLog && lastLog.sets.length > 0) {
+        setCurrentSets(lastLog.sets.map((s) => ({
+          setNumber: s.setNumber,
+          reps: s.reps,
+          weight: s.weight,
+          completed: s.completed,
+          isPR: s.isPR ?? false,
+        })));
+      }
+      setCurrentStep('logging');
       return;
     }
     const idx = stepIndex(currentStep);

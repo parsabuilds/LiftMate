@@ -100,11 +100,9 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     const updatedLogs = [...inProgressLogs, exerciseLog];
 
     if (currentExerciseIndex >= exercises.length - 1) {
+      // Don't reset state here — preserve it so back-navigation from cardioAbs works.
+      // State is only cleared when the workout is saved via clearWorkout().
       onComplete(updatedLogs);
-      // Reset exercise-level state for next workout
-      setCurrentExerciseIndex(0);
-      setInProgressLogs([]);
-      setSets([]);
     } else {
       setInProgressLogs(updatedLogs);
       const nextIndex = currentExerciseIndex + 1;
