@@ -166,7 +166,7 @@ export function Landing() {
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
               Track Lifts.<br />
-              <span className="text-primary">Break Records.</span><br />
+              <span className="text-red-500">Break Records.</span><br />
               Get Stronger.
             </h1>
             <p className="text-lg md:text-xl text-muted max-w-xl mx-auto mb-10 leading-relaxed">
