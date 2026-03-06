@@ -8,6 +8,23 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      manifest: {
+        name: 'LiftMate',
+        short_name: 'LiftMate',
+        description: 'Your AI-powered workout companion',
+        start_url: '/',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#0F172A',
+        theme_color: '#3B82F6',
+        icons: [
+          {
+            src: '/icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+          },
+        ],
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,svg}'],
         skipWaiting: true,
