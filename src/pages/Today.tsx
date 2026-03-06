@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
 import { GreetingHeader } from '../components/today/GreetingHeader';
 import { WorkoutCard } from '../components/today/WorkoutCard';
@@ -6,6 +7,8 @@ import { QuickLog } from '../components/today/QuickLog';
 import { GoalsPreview } from '../components/today/GoalsPreview';
 
 export function Today() {
+  const navigate = useNavigate();
+
   return (
     <Layout>
       {/* Ambient glow orbs */}
@@ -17,6 +20,15 @@ export function Today() {
 
       <div className="relative z-10 space-y-5">
         <GreetingHeader />
+
+        {/* Start Workout CTA */}
+        <button
+          onClick={() => navigate('/workout')}
+          className="w-full py-4 bg-primary hover:bg-primary/90 text-white text-lg font-black uppercase tracking-wide rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-primary/25"
+        >
+          Start Workout
+        </button>
+
         <WorkoutCard />
         <GoalsPreview />
         <Checklist />
