@@ -180,15 +180,30 @@ export function WorkoutCard() {
           {totalExercises} exercises · ~{estMinutes} min
         </p>
 
-        {/* Progress bar */}
-        <div className="flex items-center gap-3 mt-3">
-          <div className="flex-1 h-1.5 bg-border/50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progressPct}%` }}
-            />
+        {/* Progress bar (only if workout started today) */}
+        {todaysLog && (
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex-1 h-1.5 bg-border/50 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <span className="text-xs font-bold text-primary">{progressPct}%</span>
           </div>
-          <span className="text-xs font-bold text-primary">{progressPct}%</span>
+        )}
+
+        {/* Start Workout button */}
+        <div className="mt-4 flex items-center justify-between">
+          <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+            </svg>
+            {todaysLog ? 'View Workout' : 'Start Workout'}
+          </span>
+          <svg className="w-5 h-5 text-muted/50 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
         </div>
       </div>
     </button>
