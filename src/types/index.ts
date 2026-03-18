@@ -65,6 +65,8 @@ export interface WorkoutLog {
   exercises: ExerciseLog[];
   energyRating?: number;
   cardioOrAbs?: CardioAbsChoice;
+  cardioMinutes?: number;
+  cardioCalories?: number;
 }
 
 export interface ExerciseLog {

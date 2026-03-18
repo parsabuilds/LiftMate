@@ -1,13 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface CircularTimerProps {
-  duration: number; // seconds
+  duration: number; // total seconds (for progress ring)
+  endTime: number;  // absolute timestamp (ms) when timer should end
   onComplete?: () => void;
   size?: number;
 }
 
-export function CircularTimer({ duration, onComplete, size = 120 }: CircularTimerProps) {
-  const [remaining, setRemaining] = useState(duration);
+function playNotificationSound() {
+  try {
+    const ctx = new AudioContext();
+    // Three ascending beeps
+    const freqs = [660, 880, 1100];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.3;
+      osc.start(ctx.currentTime + i * 0.25);
+      osc.stop(ctx.currentTime + i * 0.25 + 0.2);
+    });
+  } catch {
+    // Audio not available
+  }
+}
+
+function vibrateDevice() {
+  try {
+    if (navigator.vibrate) {
+      navigator.vibrate([200, 100, 200, 100, 300]);
+    }
+  } catch {
+    // Vibration not available
+  }
+}
+
+export function CircularTimer({ duration, endTime, onComplete, size = 120 }: CircularTimerProps) {
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const completedRef = useRef(false);
+
+  const calcRemaining = () => Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+
+  const [remaining, setRemaining] = useState(calcRemaining);
 
   const strokeWidth = 6;
   const radius = (size - strokeWidth) / 2;
@@ -20,23 +57,25 @@ export function CircularTimer({ duration, onComplete, size = 120 }: CircularTime
   const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   useEffect(() => {
-    if (remaining <= 0) {
-      onComplete?.();
+    if (remaining <= 0 && !completedRef.current) {
+      completedRef.current = true;
+      playNotificationSound();
+      vibrateDevice();
+      onCompleteRef.current?.();
       return;
     }
 
     const timer = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const left = calcRemaining();
+      setRemaining(left);
+      if (left <= 0) {
+        clearInterval(timer);
+      }
+    }, 250); // Check more frequently for accuracy
 
     return () => clearInterval(timer);
-  }, [remaining, onComplete]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endTime]);
 
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>

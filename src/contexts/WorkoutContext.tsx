@@ -19,11 +19,14 @@ interface WorkoutState {
   selectedExercises: Exercise[];
   exerciseLogs: ExerciseLog[];
   cardioChoice: CardioAbsChoice;
+  cardioMinutes: number;
+  cardioCalories: number;
   startTime: number;
   isRest: boolean;
   currentExerciseIndex: number;
   inProgressLogs: ExerciseLog[];
   currentSets: SetRow[];
+  restTimerEnd: number | null;
 }
 
 const defaultState: WorkoutState = {
@@ -33,11 +36,14 @@ const defaultState: WorkoutState = {
   selectedExercises: [],
   exerciseLogs: [],
   cardioChoice: 'skip',
+  cardioMinutes: 0,
+  cardioCalories: 0,
   startTime: Date.now(),
   isRest: false,
   currentExerciseIndex: 0,
   inProgressLogs: [],
   currentSets: [],
+  restTimerEnd: null,
 };
 
 function loadState(): WorkoutState | null {
@@ -73,10 +79,13 @@ interface WorkoutContextValue extends WorkoutState {
   setSelectedExercises: (exercises: Exercise[]) => void;
   setExerciseLogs: (logs: ExerciseLog[]) => void;
   setCardioChoice: (choice: CardioAbsChoice) => void;
+  setCardioMinutes: (minutes: number) => void;
+  setCardioCalories: (calories: number) => void;
   setIsRest: (rest: boolean) => void;
   setCurrentExerciseIndex: (index: number) => void;
   setInProgressLogs: (logs: ExerciseLog[]) => void;
   setCurrentSets: (sets: SetRow[]) => void;
+  setRestTimerEnd: (end: number | null) => void;
   clearWorkout: () => void;
 }
 
@@ -85,7 +94,7 @@ const WorkoutContext = createContext<WorkoutContextValue | null>(null);
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WorkoutState>(() => loadState() ?? { ...defaultState, startTime: Date.now() });
 
-  // Persist to sessionStorage on every state change
+  // Persist to localStorage on every state change
   useEffect(() => {
     // Only persist if a workout is in progress (past daySelect or isRest)
     if (state.currentStep !== 'daySelect' || state.isRest) {
@@ -119,6 +128,14 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, cardioChoice: choice }));
   }, []);
 
+  const setCardioMinutes = useCallback((minutes: number) => {
+    setState((prev) => ({ ...prev, cardioMinutes: minutes }));
+  }, []);
+
+  const setCardioCalories = useCallback((calories: number) => {
+    setState((prev) => ({ ...prev, cardioCalories: calories }));
+  }, []);
+
   const setIsRest = useCallback((rest: boolean) => {
     setState((prev) => ({ ...prev, isRest: rest }));
   }, []);
@@ -133,6 +150,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
 
   const setCurrentSets = useCallback((sets: SetRow[]) => {
     setState((prev) => ({ ...prev, currentSets: sets }));
+  }, []);
+
+  const setRestTimerEnd = useCallback((end: number | null) => {
+    setState((prev) => ({ ...prev, restTimerEnd: end }));
   }, []);
 
   const clearWorkout = useCallback(() => {
@@ -150,10 +171,13 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setSelectedExercises,
         setExerciseLogs,
         setCardioChoice,
+        setCardioMinutes,
+        setCardioCalories,
         setIsRest,
         setCurrentExerciseIndex,
         setInProgressLogs,
         setCurrentSets,
+        setRestTimerEnd,
         clearWorkout,
       }}
     >
