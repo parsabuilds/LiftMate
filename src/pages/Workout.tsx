@@ -31,6 +31,8 @@ export function Workout() {
     selectedExercises, setSelectedExercises,
     exerciseLogs, setExerciseLogs,
     cardioChoice, setCardioChoice,
+    cardioMinutes, setCardioMinutes,
+    cardioCalories, setCardioCalories,
     startTime,
     isRest, setIsRest,
     clearWorkout,
@@ -45,8 +47,6 @@ export function Workout() {
 
   const routine = useMemo(() => {
     const gender = profile?.gender ?? 'male';
-    // For default routines (mens-ppl / womens-fbs), always use the latest
-    // static data so exercise updates are reflected without re-onboarding.
     if (!firestoreRoutine || firestoreRoutine.id === 'mens-ppl' || firestoreRoutine.id === 'womens-fbs') {
       return getRoutineByGender(gender);
     }
@@ -134,8 +134,10 @@ export function Workout() {
     setCurrentStep('cardioAbs');
   };
 
-  const handleCardioSelect = (choice: CardioAbsChoice) => {
+  const handleCardioSelect = (choice: CardioAbsChoice, minutes: number, calories: number) => {
     setCardioChoice(choice);
+    setCardioMinutes(minutes);
+    setCardioCalories(calories);
     setCurrentStep('summary');
   };
 
@@ -149,6 +151,8 @@ export function Workout() {
       exercises: exerciseLogs,
       energyRating,
       cardioOrAbs: cardioChoice,
+      cardioMinutes: cardioMinutes || undefined,
+      cardioCalories: cardioCalories || undefined,
     };
     await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
     clearWorkout();
@@ -156,17 +160,26 @@ export function Workout() {
   };
 
   const goBack = () => {
-    if (currentStep === 'logging' && !warmupsEnabled) {
-      setCurrentStep('exerciseSelect');
+    // Summary → CardioAbs
+    if (currentStep === 'summary') {
+      setCurrentStep('cardioAbs');
       return;
     }
-    // When going back from cardioAbs to logging, restore exercise state from exerciseLogs
+    // CardioAbs → Logging (restore exercise state from exerciseLogs)
     if (currentStep === 'cardioAbs' && exerciseLogs.length > 0) {
       const lastIndex = selectedExercises.length - 1;
-      // Put all but the last exercise into inProgressLogs, restore last exercise's sets for editing
-      setInProgressLogs(exerciseLogs.slice(0, -1));
+      // Restore all exercise logs into inProgressLogs (indexed by exercise position)
+      const restoredLogs: ExerciseLog[] = [];
+      for (const log of exerciseLogs) {
+        const idx = selectedExercises.findIndex(ex => ex.id === log.exerciseId);
+        if (idx >= 0) {
+          restoredLogs[idx] = log;
+        }
+      }
+      // Put all exercises into inProgressLogs, set current to last
+      setInProgressLogs(restoredLogs);
       setCurrentExerciseIndex(lastIndex);
-      const lastLog = exerciseLogs[exerciseLogs.length - 1];
+      const lastLog = restoredLogs[lastIndex];
       if (lastLog && lastLog.sets.length > 0) {
         setCurrentSets(lastLog.sets.map((s) => ({
           setNumber: s.setNumber,
@@ -177,6 +190,11 @@ export function Workout() {
         })));
       }
       setCurrentStep('logging');
+      return;
+    }
+    // Logging → skip warmup if disabled
+    if (currentStep === 'logging' && !warmupsEnabled) {
+      setCurrentStep('exerciseSelect');
       return;
     }
     const idx = stepIndex(currentStep);
@@ -217,8 +235,8 @@ export function Workout() {
           />
         </div>
 
-        {/* Back button (hidden during logging — ExerciseTracker has its own) */}
-        {currentStep !== 'daySelect' && currentStep !== 'summary' && currentStep !== 'logging' && (
+        {/* Back button — shown for exerciseSelect and warmup only (other steps have their own) */}
+        {(currentStep === 'exerciseSelect' || currentStep === 'warmup') && (
           <button onClick={goBack} className="text-primary text-sm font-semibold mb-4 hover:underline flex items-center gap-1">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 19l-7-7 7-7" />
@@ -252,7 +270,13 @@ export function Workout() {
         )}
 
         {currentStep === 'cardioAbs' && (
-          <CardioAbsSelector onSelect={handleCardioSelect} />
+          <CardioAbsSelector
+            initialChoice={cardioChoice !== 'skip' ? cardioChoice : undefined}
+            initialMinutes={cardioMinutes}
+            initialCalories={cardioCalories}
+            onSelect={handleCardioSelect}
+            onBack={goBack}
+          />
         )}
 
         {currentStep === 'summary' && (
@@ -261,6 +285,7 @@ export function Workout() {
             exercises={exerciseLogs}
             prs={prs}
             onSave={handleSave}
+            onBack={goBack}
           />
         )}
       </div>

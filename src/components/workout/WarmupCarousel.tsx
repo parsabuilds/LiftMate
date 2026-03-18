@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import type { Warmup } from '../../types';
@@ -36,13 +36,19 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
 
   const warmup = warmups[currentIndex];
   const duration = parseDuration(warmup.duration);
+  const endTimeRef = useRef(Date.now() + duration * 1000);
+
+  // Reset endTime when warmup changes
+  useEffect(() => {
+    endTimeRef.current = Date.now() + duration * 1000;
+  }, [timerKey, duration]);
 
   return (
     <div className="flex flex-col items-center space-y-6">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted">Warmup {currentIndex + 1} of {warmups.length}</p>
       <h3 className="text-text text-2xl font-black text-center tracking-tight">{warmup.name}</h3>
 
-      <CircularTimer key={timerKey} duration={duration} onComplete={advance} size={160} />
+      <CircularTimer key={timerKey} duration={duration} endTime={endTimeRef.current} onComplete={advance} size={160} />
 
       <div className="flex gap-2 justify-center">
         {warmups.map((_, i) => (

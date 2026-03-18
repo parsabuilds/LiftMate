@@ -36,9 +36,21 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     setInProgressLogs,
     currentSets: sets,
     setCurrentSets: setSets,
+    restTimerEnd,
+    setRestTimerEnd,
   } = useWorkoutContext();
 
-  const [showRest, setShowRest] = useState(false);
+  // Show rest overlay if there's an active timer
+  const [showRest, setShowRest] = useState(() => {
+    return restTimerEnd !== null && restTimerEnd > Date.now();
+  });
+
+  // Sync showRest with restTimerEnd from context (e.g., after page navigation)
+  useEffect(() => {
+    if (restTimerEnd !== null && restTimerEnd > Date.now()) {
+      setShowRest(true);
+    }
+  }, [restTimerEnd]);
 
   // Initialize sets for current exercise if empty (first mount or after navigation)
   useEffect(() => {
@@ -71,7 +83,15 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         return { ...s, completed: true, isPR };
       })
     );
+    // Start rest timer
+    const end = Date.now() + restSeconds * 1000;
+    setRestTimerEnd(end);
     setShowRest(true);
+  };
+
+  const dismissRest = () => {
+    setRestTimerEnd(null);
+    setShowRest(false);
   };
 
   const addSet = () => {
@@ -81,54 +101,22 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     ]);
   };
 
+  // Build log saving ALL sets (including uncompleted with data)
   const buildLogForCurrentExercise = useCallback((): ExerciseLog => ({
     exerciseId: exercise.id,
     exerciseName: exercise.name,
-    sets: sets
-      .filter((s) => s.completed)
-      .map((s): SetLog => ({
-        setNumber: s.setNumber,
-        reps: s.reps,
-        weight: s.weight,
-        completed: true,
-        isPR: s.isPR,
-      })),
+    sets: sets.map((s): SetLog => ({
+      setNumber: s.setNumber,
+      reps: s.reps,
+      weight: s.weight,
+      completed: s.completed,
+      isPR: s.isPR ?? false,
+    })),
   }), [exercise, sets]);
 
-  const goToNext = useCallback(() => {
-    const exerciseLog = buildLogForCurrentExercise();
-    const updatedLogs = [...inProgressLogs, exerciseLog];
-
-    if (currentExerciseIndex >= exercises.length - 1) {
-      // Don't reset state here — preserve it so back-navigation from cardioAbs works.
-      // State is only cleared when the workout is saved via clearWorkout().
-      onComplete(updatedLogs);
-    } else {
-      setInProgressLogs(updatedLogs);
-      const nextIndex = currentExerciseIndex + 1;
-      setCurrentExerciseIndex(nextIndex);
-      setSets(initSets(exercises[nextIndex]));
-    }
-  }, [buildLogForCurrentExercise, inProgressLogs, currentExerciseIndex, exercises, onComplete, setCurrentExerciseIndex, setInProgressLogs, setSets]);
-
-  const goToPrev = useCallback(() => {
-    if (currentExerciseIndex === 0) {
-      onBack();
-      return;
-    }
-
-    const prevIndex = currentExerciseIndex - 1;
-    // Restore the previous exercise's log from inProgressLogs
-    const prevExerciseLog = inProgressLogs[prevIndex];
-    // Remove the previous exercise from inProgressLogs (we'll re-add when moving forward)
-    const updatedLogs = inProgressLogs.slice(0, prevIndex);
-
-    setInProgressLogs(updatedLogs);
-    setCurrentExerciseIndex(prevIndex);
-
-    // Restore sets from the previous exercise's log, or reinitialize
-    if (prevExerciseLog && prevExerciseLog.sets.length > 0) {
-      setSets(prevExerciseLog.sets.map((s): SetRow => ({
+  const restoreSetsFromLog = useCallback((log: ExerciseLog | undefined, targetExercise: Exercise) => {
+    if (log && log.sets.length > 0) {
+      setSets(log.sets.map((s): SetRow => ({
         setNumber: s.setNumber,
         reps: s.reps,
         weight: s.weight,
@@ -136,9 +124,54 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         isPR: s.isPR ?? false,
       })));
     } else {
-      setSets(initSets(exercises[prevIndex]));
+      setSets(initSets(targetExercise));
     }
-  }, [currentExerciseIndex, inProgressLogs, exercises, onBack, setCurrentExerciseIndex, setInProgressLogs, setSets]);
+  }, [setSets]);
+
+  // Save current exercise and navigate to a target index
+  const navigateToExercise = useCallback((targetIndex: number) => {
+    if (targetIndex === currentExerciseIndex || targetIndex < 0 || targetIndex >= exercises.length) return;
+
+    // Save current exercise data at current index
+    const exerciseLog = buildLogForCurrentExercise();
+    const updatedLogs = [...inProgressLogs];
+    updatedLogs[currentExerciseIndex] = exerciseLog;
+
+    setInProgressLogs(updatedLogs);
+    setCurrentExerciseIndex(targetIndex);
+    restoreSetsFromLog(updatedLogs[targetIndex], exercises[targetIndex]);
+  }, [currentExerciseIndex, exercises, inProgressLogs, buildLogForCurrentExercise, setInProgressLogs, setCurrentExerciseIndex, restoreSetsFromLog]);
+
+  const goToNext = useCallback(() => {
+    const exerciseLog = buildLogForCurrentExercise();
+    const updatedLogs = [...inProgressLogs];
+    updatedLogs[currentExerciseIndex] = exerciseLog;
+
+    if (currentExerciseIndex >= exercises.length - 1) {
+      // Filter to completed sets only for final submission
+      const finalLogs = updatedLogs
+        .filter(Boolean)
+        .map(log => ({
+          ...log,
+          sets: log.sets.filter(s => s.completed),
+        }))
+        .filter(log => log.sets.length > 0);
+      onComplete(finalLogs);
+    } else {
+      setInProgressLogs(updatedLogs);
+      const nextIndex = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIndex);
+      restoreSetsFromLog(updatedLogs[nextIndex], exercises[nextIndex]);
+    }
+  }, [buildLogForCurrentExercise, inProgressLogs, currentExerciseIndex, exercises, onComplete, setCurrentExerciseIndex, setInProgressLogs, restoreSetsFromLog]);
+
+  const goToPrev = useCallback(() => {
+    if (currentExerciseIndex === 0) {
+      onBack();
+      return;
+    }
+    navigateToExercise(currentExerciseIndex - 1);
+  }, [currentExerciseIndex, navigateToExercise, onBack]);
 
   if (!exercise) return null;
 
@@ -147,17 +180,40 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
   return (
     <div className="space-y-4 relative">
       {/* Rest timer overlay */}
-      {showRest && (
+      {showRest && restTimerEnd && restTimerEnd > Date.now() && (
         <div className="fixed inset-0 bg-bg/95 z-50 flex flex-col items-center justify-center gap-6 backdrop-blur-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">Rest Timer</p>
-          <CircularTimer duration={restSeconds} onComplete={() => setShowRest(false)} size={180} />
-          <Button variant="secondary" onClick={() => setShowRest(false)}>
+          <CircularTimer duration={restSeconds} endTime={restTimerEnd} onComplete={dismissRest} size={180} />
+          <Button variant="secondary" onClick={dismissRest}>
             Skip Rest
           </Button>
         </div>
       )}
 
-      {/* Back button */}
+      {/* Exercise navigation pills — tap to jump to any exercise */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {exercises.map((ex, i) => {
+          const hasData = inProgressLogs[i] && inProgressLogs[i].sets.some(s => s.completed);
+          const isCurrent = i === currentExerciseIndex;
+          return (
+            <button
+              key={ex.id}
+              onClick={() => navigateToExercise(i)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                isCurrent
+                  ? 'bg-primary text-white'
+                  : hasData
+                    ? 'bg-success/20 text-success border border-success/30'
+                    : 'bg-card/60 text-muted border border-white/[0.06]'
+              }`}
+            >
+              {ex.name.length > 15 ? ex.name.slice(0, 15) + '…' : ex.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Back / Previous button */}
       <button onClick={goToPrev} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 19l-7-7 7-7" />
