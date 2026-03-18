@@ -4,6 +4,13 @@ export type WorkoutStep = 'daySelect' | 'exerciseSelect' | 'warmup' | 'logging' 
 
 export type CardioAbsChoice = 'cardio' | 'abs' | 'skip';
 
+export interface PostWorkoutActivities {
+  cardio?: { minutes: number; calories: number };
+  abs?: { sets: number; reps: number };
+  sauna?: { minutes: number };
+  coldPlunge?: { minutes: number };
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -67,6 +74,7 @@ export interface WorkoutLog {
   cardioOrAbs?: CardioAbsChoice;
   cardioMinutes?: number;
   cardioCalories?: number;
+  postWorkout?: PostWorkoutActivities;
 }
 
 export interface ExerciseLog {

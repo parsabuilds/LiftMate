@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, RoutineDay } from '../types';
+import type { WorkoutStep, DayType, Exercise, ExerciseLog, RoutineDay, PostWorkoutActivities } from '../types';
 
 const STORAGE_KEY = 'liftmate_active_workout';
 
@@ -18,9 +18,7 @@ interface WorkoutState {
   routineDay: RoutineDay | null;
   selectedExercises: Exercise[];
   exerciseLogs: ExerciseLog[];
-  cardioChoice: CardioAbsChoice;
-  cardioMinutes: number;
-  cardioCalories: number;
+  postWorkout: PostWorkoutActivities;
   startTime: number;
   isRest: boolean;
   currentExerciseIndex: number;
@@ -35,9 +33,7 @@ const defaultState: WorkoutState = {
   routineDay: null,
   selectedExercises: [],
   exerciseLogs: [],
-  cardioChoice: 'skip',
-  cardioMinutes: 0,
-  cardioCalories: 0,
+  postWorkout: {},
   startTime: Date.now(),
   isRest: false,
   currentExerciseIndex: 0,
@@ -78,9 +74,7 @@ interface WorkoutContextValue extends WorkoutState {
   setRoutineDay: (day: RoutineDay | null) => void;
   setSelectedExercises: (exercises: Exercise[]) => void;
   setExerciseLogs: (logs: ExerciseLog[]) => void;
-  setCardioChoice: (choice: CardioAbsChoice) => void;
-  setCardioMinutes: (minutes: number) => void;
-  setCardioCalories: (calories: number) => void;
+  setPostWorkout: (activities: PostWorkoutActivities) => void;
   setIsRest: (rest: boolean) => void;
   setCurrentExerciseIndex: (index: number) => void;
   setInProgressLogs: (logs: ExerciseLog[]) => void;
@@ -96,7 +90,6 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
 
   // Persist to localStorage on every state change
   useEffect(() => {
-    // Only persist if a workout is in progress (past daySelect or isRest)
     if (state.currentStep !== 'daySelect' || state.isRest) {
       saveState(state);
     } else {
@@ -124,16 +117,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, exerciseLogs: logs }));
   }, []);
 
-  const setCardioChoice = useCallback((choice: CardioAbsChoice) => {
-    setState((prev) => ({ ...prev, cardioChoice: choice }));
-  }, []);
-
-  const setCardioMinutes = useCallback((minutes: number) => {
-    setState((prev) => ({ ...prev, cardioMinutes: minutes }));
-  }, []);
-
-  const setCardioCalories = useCallback((calories: number) => {
-    setState((prev) => ({ ...prev, cardioCalories: calories }));
+  const setPostWorkout = useCallback((activities: PostWorkoutActivities) => {
+    setState((prev) => ({ ...prev, postWorkout: activities }));
   }, []);
 
   const setIsRest = useCallback((rest: boolean) => {
@@ -170,9 +155,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setRoutineDay,
         setSelectedExercises,
         setExerciseLogs,
-        setCardioChoice,
-        setCardioMinutes,
-        setCardioCalories,
+        setPostWorkout,
         setIsRest,
         setCurrentExerciseIndex,
         setInProgressLogs,

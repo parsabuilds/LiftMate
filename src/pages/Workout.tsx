@@ -12,7 +12,7 @@ import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { useCollection, useDocument } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
-import type { WorkoutStep, DayType, CardioAbsChoice, Exercise, ExerciseLog, WorkoutLog, Routine } from '../types';
+import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities } from '../types';
 
 const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'warmup', 'logging', 'cardioAbs', 'summary'];
 
@@ -30,9 +30,7 @@ export function Workout() {
     routineDay, setRoutineDay,
     selectedExercises, setSelectedExercises,
     exerciseLogs, setExerciseLogs,
-    cardioChoice, setCardioChoice,
-    cardioMinutes, setCardioMinutes,
-    cardioCalories, setCardioCalories,
+    postWorkout, setPostWorkout,
     startTime,
     isRest, setIsRest,
     clearWorkout,
@@ -134,10 +132,8 @@ export function Workout() {
     setCurrentStep('cardioAbs');
   };
 
-  const handleCardioSelect = (choice: CardioAbsChoice, minutes: number, calories: number) => {
-    setCardioChoice(choice);
-    setCardioMinutes(minutes);
-    setCardioCalories(calories);
+  const handlePostWorkoutSelect = (activities: PostWorkoutActivities) => {
+    setPostWorkout(activities);
     setCurrentStep('summary');
   };
 
@@ -150,9 +146,7 @@ export function Workout() {
       completedAt: Date.now(),
       exercises: exerciseLogs,
       energyRating,
-      cardioOrAbs: cardioChoice,
-      cardioMinutes: cardioMinutes || undefined,
-      cardioCalories: cardioCalories || undefined,
+      postWorkout: Object.keys(postWorkout).length > 0 ? postWorkout : undefined,
     };
     await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
     clearWorkout();
@@ -160,15 +154,14 @@ export function Workout() {
   };
 
   const goBack = () => {
-    // Summary → CardioAbs
+    // Summary -> CardioAbs
     if (currentStep === 'summary') {
       setCurrentStep('cardioAbs');
       return;
     }
-    // CardioAbs → Logging (restore exercise state from exerciseLogs)
+    // CardioAbs -> Logging (restore exercise state from exerciseLogs)
     if (currentStep === 'cardioAbs' && exerciseLogs.length > 0) {
       const lastIndex = selectedExercises.length - 1;
-      // Restore all exercise logs into inProgressLogs (indexed by exercise position)
       const restoredLogs: ExerciseLog[] = [];
       for (const log of exerciseLogs) {
         const idx = selectedExercises.findIndex(ex => ex.id === log.exerciseId);
@@ -176,7 +169,6 @@ export function Workout() {
           restoredLogs[idx] = log;
         }
       }
-      // Put all exercises into inProgressLogs, set current to last
       setInProgressLogs(restoredLogs);
       setCurrentExerciseIndex(lastIndex);
       const lastLog = restoredLogs[lastIndex];
@@ -192,7 +184,7 @@ export function Workout() {
       setCurrentStep('logging');
       return;
     }
-    // Logging → skip warmup if disabled
+    // Logging -> skip warmup if disabled
     if (currentStep === 'logging' && !warmupsEnabled) {
       setCurrentStep('exerciseSelect');
       return;
@@ -213,7 +205,7 @@ export function Workout() {
     exerciseSelect: 'Choose Exercises',
     warmup: 'Warm Up',
     logging: selectedDayType ?? 'Workout',
-    cardioAbs: 'Cardio / Abs',
+    cardioAbs: 'Post-Workout',
     summary: 'Workout Complete',
   };
 
@@ -230,7 +222,6 @@ export function Workout() {
 
         {/* Workout phase indicator */}
         <div className="flex items-center gap-1.5 mb-5">
-          {/* Pre-Workout */}
           <div className="flex-1 flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
               workoutPhase === 'pre' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
@@ -239,7 +230,6 @@ export function Workout() {
               workoutPhase === 'pre' ? 'text-primary' : 'text-muted/50'
             }`}>Warm-Up</span>
           </div>
-          {/* Main Workout */}
           <div className="flex-[2] flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
               workoutPhase === 'main' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
@@ -248,7 +238,6 @@ export function Workout() {
               workoutPhase === 'main' ? 'text-primary' : 'text-muted/50'
             }`}>Workout</span>
           </div>
-          {/* After Workout */}
           <div className="flex-1 flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
               workoutPhase === 'post' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
@@ -295,10 +284,8 @@ export function Workout() {
 
         {currentStep === 'cardioAbs' && (
           <CardioAbsSelector
-            initialChoice={cardioChoice !== 'skip' ? cardioChoice : undefined}
-            initialMinutes={cardioMinutes}
-            initialCalories={cardioCalories}
-            onSelect={handleCardioSelect}
+            initial={postWorkout}
+            onSelect={handlePostWorkoutSelect}
             onBack={goBack}
           />
         )}
