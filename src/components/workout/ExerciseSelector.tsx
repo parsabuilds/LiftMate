@@ -80,7 +80,7 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
       ))}
 
       <Button fullWidth disabled={!allGroupsHaveSelection} onClick={() => onComplete(selections)}>
-        Continue
+        Start Workout
       </Button>
     </div>
   );
