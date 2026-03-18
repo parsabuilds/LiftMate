@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { setDocument, updateDocument } from '../hooks/useFirestore';
@@ -45,6 +45,7 @@ export function Onboarding() {
   const [restSeconds, setRestSeconds] = useState(90);
 
   function goBack() {
+    if (step === 1) return;
     if (step === 2) setStep(1);
     else if (step === 3) setStep(2);
     else if (step === 4) setStep(3);
@@ -52,6 +53,20 @@ export function Onboarding() {
     else if (step === 6) setStep(useDefault ? 4 : 5);
     else if (step === 7) setStep(6);
   }
+
+  // Swipe-right-to-go-back gesture
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    // Swipe right: horizontal distance > 80px and more horizontal than vertical
+    if (dx > 80 && dx > dy * 1.5) goBack();
+  }, [step, useDefault]);
 
   function buildCustomRoutine(): Routine {
     const days: RoutineDay[] = [];
@@ -106,11 +121,18 @@ export function Onboarding() {
   const wrapper = "min-h-screen bg-bg flex flex-col items-center justify-center px-6 relative overflow-hidden";
   const glow = "absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-primary/[0.08] rounded-full blur-[120px]";
   const card = "max-w-[430px] w-full space-y-8 relative z-10";
+  const swipeProps = { onTouchStart: handleTouchStart, onTouchEnd: handleTouchEnd };
+  const backButton = (
+    <button onClick={goBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
+      Back
+    </button>
+  );
 
   // Step 1: Welcome
   if (step === 1) {
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className={`${card} text-center`}>
           <div className="space-y-4">
@@ -139,9 +161,10 @@ export function Onboarding() {
   // Step 2: Name
   if (step === 2) {
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className={card}>
+          {backButton}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-text tracking-tight">What should we call you?</h2>
             <p className="text-muted">You can always change this later.</p>
@@ -168,9 +191,10 @@ export function Onboarding() {
   // Step 3: Gender
   if (step === 3) {
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className={card}>
+          {backButton}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-text tracking-tight">Select your program</h2>
             <p className="text-muted">This helps us pick the right routine for you.</p>
@@ -208,13 +232,10 @@ export function Onboarding() {
   if (step === 4) {
     const routine = gender ? getRoutineByGender(gender) : null;
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className={card}>
-          <button onClick={goBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
-            Back
-          </button>
+          {backButton}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-text tracking-tight">Your Routine</h2>
             <p className="text-muted">We recommend this {routine?.days.length}-day split — it's what our most elite users follow. Ideally repeat it twice per week, or as often as you can.</p>
@@ -226,7 +247,7 @@ export function Onboarding() {
                 <div key={i} className="bg-card/60 border border-white/[0.06] rounded-2xl p-4 backdrop-blur-sm">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{'\uD83D\uDCC5'}</span>
-                    <h3 className="text-text font-bold">Day {i + 1}: {day.dayType} ({day.muscleGroups.map((mg) => mg.name).join(' & ')})</h3>
+                    <h3 className="text-text font-bold">Day {i + 1}: {day.dayType}</h3>
                   </div>
                 </div>
               ))}
@@ -251,13 +272,10 @@ export function Onboarding() {
   if (step === 5) {
     const hasAtLeastOneMuscle = dayMuscles.slice(0, dayCount).every((d) => d.length > 0);
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className="max-w-[430px] w-full space-y-6 relative z-10 max-h-screen overflow-y-auto py-8">
-          <button onClick={goBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
-            Back
-          </button>
+          {backButton}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-text tracking-tight">Build Your Routine</h2>
             <p className="text-muted">Pick how many days and what muscles to hit each day.</p>
@@ -325,13 +343,10 @@ export function Onboarding() {
   // Step 6: Warmup Preference
   if (step === 6) {
     return (
-      <div className={wrapper}>
+      <div className={wrapper} {...swipeProps}>
         <div className={glow} />
         <div className={card}>
-          <button onClick={goBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
-            Back
-          </button>
+          {backButton}
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-text tracking-tight">Warmup Routine</h2>
             <p className="text-muted">Would you like a 3-5 minute warmup before each workout?</p>
@@ -386,13 +401,10 @@ export function Onboarding() {
 
   // Step 7: Rest Timer
   return (
-    <div className={wrapper}>
+    <div className={wrapper} {...swipeProps}>
       <div className={glow} />
       <div className={card}>
-        <button onClick={goBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
-          Back
-        </button>
+        {backButton}
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-black text-text tracking-tight">Rest Timer</h2>
           <p className="text-muted">How long do you want to rest between sets?</p>
