@@ -194,16 +194,13 @@ export function WorkoutCard() {
         )}
 
         {/* Start Workout button */}
-        <div className="mt-4 flex items-center justify-between">
-          <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+        <div className="mt-5 flex justify-center">
+          <span className="inline-flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-primary rounded-xl text-base font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
             </svg>
             {todaysLog ? 'View Workout' : 'Start Workout'}
           </span>
-          <svg className="w-5 h-5 text-muted/50 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-          </svg>
         </div>
       </div>
     </button>
