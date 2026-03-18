@@ -228,22 +228,7 @@ export function Workout() {
         )}
 
         {currentStep === 'daySelect' && (
-          <>
-            <button
-              onClick={() => {
-                // Auto-select the suggested next day
-                const dayTypes = routine.days.map((d) => d.dayType);
-                if (dayTypes.length > 0) {
-                  handleDaySelect(dayTypes[0]);
-                }
-              }}
-              className="w-full py-4 mb-5 bg-primary hover:bg-primary/90 text-white text-lg font-black uppercase tracking-wide rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-primary/25"
-            >
-              Start Today's Workout
-            </button>
-            <p className="text-muted mb-4">Or choose a different day</p>
-            <DaySelector routine={routine} onSelectDay={handleDaySelect} />
-          </>
+          <DaySelector routine={routine} onSelectDay={handleDaySelect} />
         )}
 
         {currentStep === 'exerciseSelect' && routineDay && (
