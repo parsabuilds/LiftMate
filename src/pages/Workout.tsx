@@ -203,9 +203,10 @@ export function Workout() {
     }
   };
 
-  const stepNum = stepIndex(currentStep) + 1;
-  const totalSteps = STEP_ORDER.length;
-  const progressPct = (stepNum / totalSteps) * 100;
+  const workoutPhase: 'pre' | 'main' | 'post' =
+    currentStep === 'logging' ? 'main'
+    : currentStep === 'cardioAbs' || currentStep === 'summary' ? 'post'
+    : 'pre';
 
   const titles: Record<WorkoutStep, string> = {
     daySelect: 'Workout',
@@ -227,12 +228,35 @@ export function Workout() {
         {/* Page header */}
         <h1 className="text-3xl font-black text-text tracking-tight mb-2">{titles[currentStep]}</h1>
 
-        {/* Progress bar */}
-        <div className="h-1.5 bg-border/50 rounded-full mb-5">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
+        {/* Workout phase indicator */}
+        <div className="flex items-center gap-1.5 mb-5">
+          {/* Pre-Workout */}
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
+              workoutPhase === 'pre' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+            }`} />
+            <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+              workoutPhase === 'pre' ? 'text-primary' : 'text-muted/50'
+            }`}>Warm-Up</span>
+          </div>
+          {/* Main Workout */}
+          <div className="flex-[2] flex flex-col items-center gap-1">
+            <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
+              workoutPhase === 'main' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+            }`} />
+            <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+              workoutPhase === 'main' ? 'text-primary' : 'text-muted/50'
+            }`}>Workout</span>
+          </div>
+          {/* After Workout */}
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
+              workoutPhase === 'post' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+            }`} />
+            <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+              workoutPhase === 'post' ? 'text-primary' : 'text-muted/50'
+            }`}>Cool-Down</span>
+          </div>
         </div>
 
         {/* Back button — shown for exerciseSelect and warmup only (other steps have their own) */}
