@@ -63,12 +63,10 @@ export function CardioAbsSelector({ initialChoice, initialMinutes, initialCalori
         </button>
       ))}
 
-      {/* Input fields for cardio/abs */}
-      {selected && selected !== 'skip' && (
+      {/* Input fields for cardio */}
+      {selected === 'cardio' && (
         <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-4 backdrop-blur-sm space-y-3 mt-2">
-          <p className="text-muted text-xs font-semibold uppercase tracking-wider">
-            {selected === 'cardio' ? 'Cardio Details' : 'Abs Details'}
-          </p>
+          <p className="text-muted text-xs font-semibold uppercase tracking-wider">Cardio Details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-muted text-xs font-medium block mb-1">Duration (min)</label>
@@ -89,6 +87,37 @@ export function CardioAbsSelector({ initialChoice, initialMinutes, initialCalori
                 value={calories || ''}
                 onChange={(e) => setCalories(parseInt(e.target.value) || 0)}
                 placeholder="150"
+                className="bg-bg/50 border border-white/[0.08] rounded-xl px-3 py-2.5 text-text text-sm w-full focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Input fields for abs */}
+      {selected === 'abs' && (
+        <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-4 backdrop-blur-sm space-y-3 mt-2">
+          <p className="text-muted text-xs font-semibold uppercase tracking-wider">Abs Details</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-muted text-xs font-medium block mb-1">Sets</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={minutes || ''}
+                onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
+                placeholder="3"
+                className="bg-bg/50 border border-white/[0.08] rounded-xl px-3 py-2.5 text-text text-sm w-full focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-muted text-xs font-medium block mb-1">Reps</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={calories || ''}
+                onChange={(e) => setCalories(parseInt(e.target.value) || 0)}
+                placeholder="15"
                 className="bg-bg/50 border border-white/[0.08] rounded-xl px-3 py-2.5 text-text text-sm w-full focus:outline-none focus:border-primary transition-colors"
               />
             </div>
