@@ -107,7 +107,7 @@ export function QuickLog() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeight(); }}
                   placeholder="Enter weight"
                   autoFocus={isEditing}
-                  className="w-full min-h-[44px] bg-bg/60 border border-border/60 rounded-xl pl-11 pr-4 py-2.5 text-text placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all text-sm font-medium"
+                  className="w-full min-h-[44px] bg-bg/60 border border-border/60 rounded-xl pl-11 pr-4 py-2.5 text-text placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all text-base font-medium"
                 />
               </div>
               <button

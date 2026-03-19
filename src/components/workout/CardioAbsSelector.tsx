@@ -64,7 +64,7 @@ export function CardioAbsSelector({ initial, onSelect, onBack }: CardioAbsSelect
     onSelect(activities);
   };
 
-  const inputClass = 'bg-bg/50 border border-white/[0.08] rounded-xl px-3 py-2.5 text-text text-sm w-full focus:outline-none focus:border-primary transition-colors';
+  const inputClass = 'bg-bg/50 border border-white/[0.08] rounded-xl px-3 py-2.5 text-text text-base w-full focus:outline-none focus:border-primary transition-colors';
 
   return (
     <div className="space-y-3">

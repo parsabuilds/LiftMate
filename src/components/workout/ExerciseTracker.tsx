@@ -284,7 +284,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
               value={set.reps || ''}
               onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
               disabled={set.completed}
-              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder={exercise.reps}
             />
             <input
@@ -293,7 +293,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
               value={set.weight || ''}
               onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
               disabled={set.completed}
-              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder="lbs"
             />
             <div className="flex items-center gap-1">

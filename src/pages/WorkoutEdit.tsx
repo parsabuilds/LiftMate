@@ -234,7 +234,7 @@ export function WorkoutEdit() {
                     inputMode="numeric"
                     value={set.reps || ''}
                     onChange={(e) => updateSet(activeExerciseIndex, si, 'reps', parseInt(e.target.value) || 0)}
-                    className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+                    className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
                     placeholder="reps"
                   />
                   <input
@@ -242,7 +242,7 @@ export function WorkoutEdit() {
                     inputMode="numeric"
                     value={set.weight || ''}
                     onChange={(e) => updateSet(activeExerciseIndex, si, 'weight', parseInt(e.target.value) || 0)}
-                    className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+                    className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
                     placeholder="lbs"
                   />
                   <button
