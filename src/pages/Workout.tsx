@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
+import { Button } from '../components/ui/Button';
 import { DaySelector } from '../components/workout/DaySelector';
 import { ExerciseSelector } from '../components/workout/ExerciseSelector';
 import { WarmupCarousel } from '../components/workout/WarmupCarousel';
@@ -12,6 +13,7 @@ import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { useCollection, useDocument } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
+import { getLocalDateString } from '../utils/date';
 import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities } from '../types';
 
 const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'warmup', 'logging', 'cardioAbs', 'summary'];
@@ -54,6 +56,11 @@ export function Workout() {
   const { data: previousWorkouts } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
   );
+
+  const todaysLog = useMemo(() => {
+    const today = getLocalDateString();
+    return previousWorkouts.find((w) => w.date === today && w.completedAt);
+  }, [previousWorkouts]);
 
   const previousLogsForDay = useMemo(() => {
     if (!selectedDayType || !previousWorkouts.length) return undefined;
@@ -139,6 +146,7 @@ export function Workout() {
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [dismissedSummary, setDismissedSummary] = useState(false);
 
   const handleSave = async (energyRating: number) => {
     if (!user || !selectedDayType) return;
@@ -146,7 +154,7 @@ export function Workout() {
     setSaveError(null);
     try {
       const workoutLog: Record<string, unknown> = {
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDateString(),
         dayType: selectedDayType,
         startedAt: startTime,
         completedAt: Date.now(),
@@ -272,7 +280,49 @@ export function Workout() {
         )}
 
         {currentStep === 'daySelect' && (
-          <DaySelector routine={routine} onSelectDay={handleDaySelect} />
+          todaysLog && !dismissedSummary ? (
+            <div className="space-y-4">
+              <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-success" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-success">
+                    Workout Completed
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-text tracking-tight">
+                  {todaysLog.dayType}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-bg/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted font-semibold uppercase">Exercises</p>
+                    <p className="text-lg font-black text-text">{todaysLog.exercises.length}</p>
+                  </div>
+                  <div className="bg-bg/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted font-semibold uppercase">Sets</p>
+                    <p className="text-lg font-black text-text">
+                      {todaysLog.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)}
+                    </p>
+                  </div>
+                  <div className="bg-bg/50 rounded-xl p-3 text-center">
+                    <p className="text-xs text-muted font-semibold uppercase">Volume</p>
+                    <p className="text-lg font-black text-text">
+                      {todaysLog.exercises.reduce(
+                        (sum, ex) => sum + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button fullWidth onClick={() => navigate(`/workout/edit/${todaysLog.id}`)}>
+                View & Edit Workout
+              </Button>
+              <Button fullWidth variant="secondary" onClick={() => setDismissedSummary(true)}>
+                Start Another Workout
+              </Button>
+            </div>
+          ) : (
+            <DaySelector routine={routine} onSelectDay={handleDaySelect} />
+          )
         )}
 
         {currentStep === 'exerciseSelect' && routineDay && (

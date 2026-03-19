@@ -4,6 +4,7 @@ import { useAuthContext } from '../../contexts/AuthContext';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { useCollection, useDocument } from '../../hooks/useFirestore';
 import { getRoutineByGender } from '../../data/defaultRoutines';
+import { getLocalDateString } from '../../utils/date';
 import type { WorkoutLog, Routine } from '../../types';
 
 export function WorkoutCard() {
@@ -16,7 +17,7 @@ export function WorkoutCard() {
     inProgressLogs,
     startTime,
   } = useWorkoutContext();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   const { data: workoutLogs } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
@@ -141,11 +142,8 @@ export function WorkoutCard() {
   const totalExercises = routineDay.muscleGroups.reduce((sum, g) => sum + g.exercises.length, 0);
   const estMinutes = Math.round(totalExercises * 5.5);
 
-  // Progress (based on completed exercises in today's log)
-  const completedCount = todaysLog ? todaysLog.exercises.length : 0;
-  const progressPct = todaysLog
-    ? Math.round((completedCount / totalExercises) * 100)
-    : 0;
+  // Progress — if todaysLog exists it's always a completed workout (filtered by completedAt on line 40)
+  const progressPct = todaysLog ? 100 : 0;
 
   return (
     <div className="space-y-3">
