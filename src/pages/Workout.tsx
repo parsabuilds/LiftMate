@@ -233,8 +233,8 @@ export function Workout() {
         {/* Page header */}
         <h1 className="text-3xl font-black text-text tracking-tight mb-2">{titles[currentStep]}</h1>
 
-        {/* Workout phase indicator */}
-        <div className="flex items-center gap-1.5 mb-5">
+        {/* Workout phase indicator — hidden on daySelect and exerciseSelect */}
+        {currentStep !== 'daySelect' && currentStep !== 'exerciseSelect' && <div className="flex items-center gap-1.5 mb-5">
           <div className="flex-1 flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
               workoutPhase === 'pre' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
@@ -259,7 +259,7 @@ export function Workout() {
               workoutPhase === 'post' ? 'text-primary' : 'text-muted/50'
             }`}>Cool-Down</span>
           </div>
-        </div>
+        </div>}
 
         {/* Back button — shown for exerciseSelect and warmup only (other steps have their own) */}
         {(currentStep === 'exerciseSelect' || currentStep === 'warmup') && (
