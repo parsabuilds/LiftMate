@@ -148,61 +148,74 @@ export function WorkoutCard() {
     : 0;
 
   return (
-    <button
-      onClick={() => navigate('/workout')}
-      className="group relative w-full text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
-    >
-      {/* Gradient border */}
-      <div className="absolute -inset-px bg-gradient-to-br from-primary/50 via-primary/20 to-primary/5 rounded-2xl" />
+    <div className="space-y-3">
+      <button
+        onClick={() => navigate(todaysLog ? `/workout/edit/${todaysLog.id}` : '/workout')}
+        className="group relative w-full text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+      >
+        {/* Gradient border */}
+        <div className="absolute -inset-px bg-gradient-to-br from-primary/50 via-primary/20 to-primary/5 rounded-2xl" />
 
-      {/* Card body */}
-      <div className="relative bg-card m-px rounded-2xl p-5 overflow-hidden">
-        {/* Ambient glow */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.06] rounded-full blur-[60px] pointer-events-none" />
+        {/* Card body */}
+        <div className="relative bg-card m-px rounded-2xl p-5 overflow-hidden">
+          {/* Ambient glow */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.06] rounded-full blur-[60px] pointer-events-none" />
 
-        {/* Label */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary">
-            Today's Workout
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 className="text-xl font-black text-text tracking-tight leading-snug">
-          {activeDayType}
-          <span className="text-muted font-bold"> — </span>
-          <span className="text-muted font-semibold text-lg">{muscleNames}</span>
-        </h3>
-
-        {/* Meta */}
-        <p className="text-muted text-sm mt-1">
-          {totalExercises} exercises · ~{estMinutes} min
-        </p>
-
-        {/* Progress bar (only if workout started today) */}
-        {todaysLog && (
-          <div className="flex items-center gap-3 mt-3">
-            <div className="flex-1 h-1.5 bg-border/50 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <span className="text-xs font-bold text-primary">{progressPct}%</span>
+          {/* Label */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary">
+              Today's Workout
+            </span>
           </div>
-        )}
 
-        {/* Start Workout button */}
-        <div className="mt-5 flex justify-center">
-          <span className="inline-flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-primary rounded-xl text-base font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-            </svg>
-            {todaysLog ? 'View Workout' : 'Start Workout'}
-          </span>
+          {/* Title */}
+          <h3 className="text-xl font-black text-text tracking-tight leading-snug">
+            {activeDayType}
+            <span className="text-muted font-bold"> — </span>
+            <span className="text-muted font-semibold text-lg">{muscleNames}</span>
+          </h3>
+
+          {/* Meta */}
+          <p className="text-muted text-sm mt-1">
+            {totalExercises} exercises · ~{estMinutes} min
+          </p>
+
+          {/* Progress bar (only if workout started today) */}
+          {todaysLog && (
+            <div className="flex items-center gap-3 mt-3">
+              <div className="flex-1 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-primary">{progressPct}%</span>
+            </div>
+          )}
+
+          {/* Start Workout / Edit button */}
+          <div className="mt-5 flex justify-center">
+            <span className="inline-flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-primary rounded-xl text-base font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
+              {todaysLog ? (
+                <>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                  </svg>
+                  View & Edit Workout
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                  </svg>
+                  Start Workout
+                </>
+              )}
+            </span>
+          </div>
         </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
