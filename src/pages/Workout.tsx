@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
 import { DaySelector } from '../components/workout/DaySelector';
@@ -137,20 +137,31 @@ export function Workout() {
     setCurrentStep('summary');
   };
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const handleSave = async (energyRating: number) => {
     if (!user || !selectedDayType) return;
-    const workoutLog: Omit<WorkoutLog, 'id'> = {
-      date: new Date().toISOString().split('T')[0],
-      dayType: selectedDayType,
-      startedAt: startTime,
-      completedAt: Date.now(),
-      exercises: exerciseLogs,
-      energyRating,
-      postWorkout: Object.keys(postWorkout).length > 0 ? postWorkout : undefined,
-    };
-    await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
-    clearWorkout();
-    navigate('/');
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const workoutLog: Omit<WorkoutLog, 'id'> = {
+        date: new Date().toISOString().split('T')[0],
+        dayType: selectedDayType,
+        startedAt: startTime,
+        completedAt: Date.now(),
+        exercises: exerciseLogs,
+        energyRating,
+        postWorkout: Object.keys(postWorkout).length > 0 ? postWorkout : undefined,
+      };
+      await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
+      clearWorkout();
+      navigate('/');
+    } catch (err) {
+      console.error('Failed to save workout:', err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save workout');
+      setSaving(false);
+    }
   };
 
   const goBack = () => {
@@ -297,6 +308,8 @@ export function Workout() {
             prs={prs}
             onSave={handleSave}
             onBack={goBack}
+            saving={saving}
+            saveError={saveError}
           />
         )}
       </div>

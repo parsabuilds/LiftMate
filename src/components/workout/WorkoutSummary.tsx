@@ -9,6 +9,8 @@ interface WorkoutSummaryProps {
   prs: Array<{ exerciseName: string; weight: number; reps: number }>;
   onSave: (energyRating: number) => void;
   onBack: () => void;
+  saving?: boolean;
+  saveError?: string | null;
 }
 
 function formatTime(seconds: number): string {
@@ -24,7 +26,7 @@ const statMeta = [
   { label: 'Total Volume', color: '#F59E0B' },
 ];
 
-export function WorkoutSummary({ duration, exercises, prs, onSave, onBack }: WorkoutSummaryProps) {
+export function WorkoutSummary({ duration, exercises, prs, onSave, onBack, saving, saveError }: WorkoutSummaryProps) {
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
@@ -101,8 +103,14 @@ export function WorkoutSummary({ duration, exercises, prs, onSave, onBack }: Wor
         </div>
       </div>
 
-      <Button fullWidth onClick={() => onSave(rating)} disabled={rating === 0}>
-        Save Workout
+      {saveError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">
+          {saveError}
+        </div>
+      )}
+
+      <Button fullWidth onClick={() => onSave(rating)} disabled={rating === 0 || saving}>
+        {saving ? 'Saving...' : 'Save Workout'}
       </Button>
     </div>
   );
