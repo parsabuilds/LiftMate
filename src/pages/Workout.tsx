@@ -145,15 +145,17 @@ export function Workout() {
     setSaving(true);
     setSaveError(null);
     try {
-      const workoutLog: Omit<WorkoutLog, 'id'> = {
+      const workoutLog: Record<string, unknown> = {
         date: new Date().toISOString().split('T')[0],
         dayType: selectedDayType,
         startedAt: startTime,
         completedAt: Date.now(),
         exercises: exerciseLogs,
         energyRating,
-        postWorkout: Object.keys(postWorkout).length > 0 ? postWorkout : undefined,
       };
+      if (Object.keys(postWorkout).length > 0) {
+        workoutLog.postWorkout = postWorkout;
+      }
       await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
       clearWorkout();
       navigate('/');
