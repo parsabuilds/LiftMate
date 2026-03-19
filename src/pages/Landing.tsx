@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 
 const stats = [
@@ -125,6 +126,11 @@ const faqs = [
 
 export function Landing() {
   const { signIn } = useAuthContext();
+
+  useEffect(() => {
+    document.documentElement.classList.add('landing-active');
+    return () => document.documentElement.classList.remove('landing-active');
+  }, []);
 
   return (
     <div className="min-h-screen bg-bg text-text font-['Inter',sans-serif] overflow-x-hidden">

@@ -58,9 +58,9 @@ body {
   30%, 70% { transform: rotate(0deg); }
 }
 
-/* Show overlay ONLY on mobile devices in landscape */
+/* Show overlay ONLY on mobile devices in landscape (not on landing page) */
 @media (orientation: landscape) and (max-height: 600px) and (hover: none) {
-  #landscape-overlay {
+  html:not(.landing-active) #landscape-overlay {
     display: flex;
   }
 }
