@@ -277,7 +277,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
           <span>Set</span>
           <span>Reps</span>
           <span>Weight</span>
-          <span className="text-center">Log</span>
+          <span></span>
         </div>
         {sets.map((set, i) => (
           <SwipeableRow
