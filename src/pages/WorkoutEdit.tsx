@@ -4,7 +4,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useDocument, updateDocument } from '../hooks/useFirestore';
-import { getEquipmentType, isBodyweight } from '../utils/exerciseEquipment';
+import { getEquipmentType } from '../utils/exerciseEquipment';
 import type { WorkoutLog, ExerciseLog, SetLog } from '../types';
 
 export function WorkoutEdit() {
@@ -95,7 +95,7 @@ export function WorkoutEdit() {
       const cleanedExercises = editedExercises
         .map((ex) => ({
           ...ex,
-          sets: ex.sets.filter((s) => s.reps > 0 && (s.weight > 0 || isBodyweight(ex.exerciseName))),
+          sets: ex.sets.filter((s) => s.reps > 0 && s.weight > 0),
         }))
         .filter((ex) => ex.sets.length > 0);
 
@@ -223,7 +223,7 @@ export function WorkoutEdit() {
             {/* Equipment hint */}
             {isBW && (
               <p className="text-muted text-xs italic">
-                Bodyweight exercise — weight is optional. If adding weight, enter total (body + added).
+                Enter your body weight + any added weight. For assisted exercises, subtract the assisted weight.
               </p>
             )}
             {isDB && (
@@ -239,7 +239,7 @@ export function WorkoutEdit() {
                 <span>Reps</span>
                 <span className="flex flex-col">
                   <span>Weight</span>
-                  {isBW && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(optional)</span>}
+                  {isBW && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(body + added)</span>}
                   {isDB && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(per dumbbell)</span>}
                 </span>
                 <span></span>
@@ -264,7 +264,7 @@ export function WorkoutEdit() {
                     value={set.weight || ''}
                     onChange={(e) => updateSet(activeExerciseIndex, si, 'weight', parseInt(e.target.value) || 0)}
                     className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-                    placeholder={isBW ? '+lbs' : 'lbs'}
+                    placeholder="lbs"
                   />
                   <button
                     onClick={() => removeSet(activeExerciseIndex, si)}
