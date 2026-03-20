@@ -350,9 +350,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         <button onClick={addSet} className="text-primary text-sm font-bold hover:underline">
           + Add Set
         </button>
-        {sets.filter(s => !s.completed).length > 1 && (
-          <p className="text-muted text-xs">Swipe left to remove a set</p>
-        )}
+        <p className="text-muted text-xs">Swipe left to remove a set</p>
       </div>
 
       <Button fullWidth disabled={!hasCompletedSet} onClick={goToNext}>
