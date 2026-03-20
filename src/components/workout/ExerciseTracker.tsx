@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge';
 import { SwipeableRow } from '../ui/SwipeableRow';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { getEquipmentType } from '../../utils/exerciseEquipment';
 import type { SetRow } from '../../contexts/WorkoutContext';
 import type { Exercise, ExerciseLog, SetLog } from '../../types';
 
@@ -190,6 +191,9 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
 
   if (!exercise) return null;
 
+  const equipmentType = getEquipmentType(exercise.name);
+  const isBW = equipmentType === 'bodyweight';
+  const isDB = equipmentType === 'dumbbell';
   const hasCompletedSet = sets.some((s) => s.completed);
 
   return (
@@ -271,12 +275,28 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         </div>
       </div>
 
+      {/* Equipment hint */}
+      {isBW && (
+        <p className="text-muted text-xs italic px-1">
+          Bodyweight exercise — weight is optional. If adding weight, enter total (body + added).
+        </p>
+      )}
+      {isDB && (
+        <p className="text-muted text-xs italic px-1">
+          Enter weight per dumbbell (one arm).
+        </p>
+      )}
+
       {/* Set table */}
       <div className="bg-card/60 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
         <div className="grid grid-cols-4 gap-2 px-4 py-2.5 text-xs text-muted font-bold uppercase tracking-wider border-b border-white/[0.06]">
           <span>Set</span>
           <span>Reps</span>
-          <span>Weight</span>
+          <span className="flex flex-col">
+            <span>Weight</span>
+            {isBW && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(optional)</span>}
+            {isDB && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(per dumbbell)</span>}
+          </span>
           <span></span>
         </div>
         {sets.map((set, i) => (
@@ -309,7 +329,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
                 onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
                 disabled={set.completed}
                 className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-                placeholder="lbs"
+                placeholder={isBW ? '+lbs' : 'lbs'}
               />
               <div className="flex items-center gap-1">
                 {set.completed ? (
@@ -332,7 +352,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
                 ) : (
                   <button
                     onClick={() => confirmSet(i)}
-                    disabled={set.reps === 0 || set.weight === 0}
+                    disabled={set.reps === 0 || (!isBW && set.weight === 0)}
                     className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

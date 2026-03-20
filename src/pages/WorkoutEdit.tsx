@@ -4,6 +4,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useDocument, updateDocument } from '../hooks/useFirestore';
+import { getEquipmentType, isBodyweight } from '../utils/exerciseEquipment';
 import type { WorkoutLog, ExerciseLog, SetLog } from '../types';
 
 export function WorkoutEdit() {
@@ -90,11 +91,11 @@ export function WorkoutEdit() {
     setSaving(true);
     setSaveError(null);
     try {
-      // Filter out sets with zero reps or weight
+      // Filter out sets with zero reps (allow weight=0 for bodyweight exercises)
       const cleanedExercises = editedExercises
         .map((ex) => ({
           ...ex,
-          sets: ex.sets.filter((s) => s.reps > 0 && s.weight > 0),
+          sets: ex.sets.filter((s) => s.reps > 0 && (s.weight > 0 || isBodyweight(ex.exerciseName))),
         }))
         .filter((ex) => ex.sets.length > 0);
 
@@ -211,16 +212,36 @@ export function WorkoutEdit() {
         </div>
 
         {/* Active exercise edit */}
-        {activeExercise && (
+        {activeExercise && (() => {
+          const eqType = getEquipmentType(activeExercise.exerciseName);
+          const isBW = eqType === 'bodyweight';
+          const isDB = eqType === 'dumbbell';
+          return (
           <div className="space-y-3">
             <h3 className="text-text font-black text-xl tracking-tight">{activeExercise.exerciseName}</h3>
+
+            {/* Equipment hint */}
+            {isBW && (
+              <p className="text-muted text-xs italic">
+                Bodyweight exercise — weight is optional. If adding weight, enter total (body + added).
+              </p>
+            )}
+            {isDB && (
+              <p className="text-muted text-xs italic">
+                Enter weight per dumbbell (one arm).
+              </p>
+            )}
 
             {/* Set table */}
             <div className="bg-card/60 border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
               <div className="grid grid-cols-[1fr_2fr_2fr_auto] gap-2 px-4 py-2.5 text-xs text-muted font-bold uppercase tracking-wider border-b border-white/[0.06]">
                 <span>Set</span>
                 <span>Reps</span>
-                <span>Weight</span>
+                <span className="flex flex-col">
+                  <span>Weight</span>
+                  {isBW && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(optional)</span>}
+                  {isDB && <span className="text-[10px] font-medium normal-case tracking-normal text-muted/70">(per dumbbell)</span>}
+                </span>
                 <span></span>
               </div>
               {activeExercise.sets.map((set, si) => (
@@ -243,7 +264,7 @@ export function WorkoutEdit() {
                     value={set.weight || ''}
                     onChange={(e) => updateSet(activeExerciseIndex, si, 'weight', parseInt(e.target.value) || 0)}
                     className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-                    placeholder="lbs"
+                    placeholder={isBW ? '+lbs' : 'lbs'}
                   />
                   <button
                     onClick={() => removeSet(activeExerciseIndex, si)}
@@ -262,7 +283,8 @@ export function WorkoutEdit() {
               + Add Set
             </button>
           </div>
-        )}
+          );
+        })()}
 
         {/* Error display */}
         {saveError && (
