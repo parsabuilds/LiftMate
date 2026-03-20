@@ -351,7 +351,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
           + Add Set
         </button>
         {sets.filter(s => !s.completed).length > 1 && (
-          <p className="text-muted text-xs">Swipe left to remove</p>
+          <p className="text-muted text-xs">Swipe left to remove a set</p>
         )}
       </div>
 

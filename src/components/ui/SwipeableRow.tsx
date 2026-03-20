@@ -89,7 +89,7 @@ export function SwipeableRow({ children, onDelete, disabled }: SwipeableRowProps
   return (
     <div ref={rowRef} className="relative overflow-hidden">
       {/* Red delete background */}
-      <div className="absolute inset-y-0 right-0 w-4 bg-red-500" />
+      {/* No visible delete background — hint text below the table is sufficient */}
 
       {/* Foreground content */}
       <div
