@@ -365,6 +365,9 @@ export function Settings() {
             <span className="text-muted">Version</span>
             <span className="text-text font-medium">1.0.0</span>
           </div>
+          <p className="text-muted text-xs mt-3 leading-relaxed">
+            Got feedback? No email, no form, no QR code. Find me at the gym, wait until I'm mid-set, and say it to my face. If I'm wearing headphones, that means I'm extra open to suggestions.
+          </p>
         </div>
 
         {/* Sign Out / Delete */}
