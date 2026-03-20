@@ -88,31 +88,24 @@ export function SwipeableRow({ children, onDelete, disabled }: SwipeableRowProps
 
   return (
     <div ref={rowRef} className="relative overflow-hidden">
-      {/* Red delete background — revealed as row slides left (Gmail-style) */}
-      <div
-        className="absolute inset-0 flex items-center justify-end"
-        style={{
-          background: translateX < 0
-            ? `linear-gradient(to left, #DC2626 ${Math.min(Math.abs(translateX) + 20, 100)}%, transparent ${Math.min(Math.abs(translateX) + 20, 100)}%)`
-            : 'transparent',
-        }}
-      >
-        {translateX < -10 && (
-          <div
-            className="flex items-center gap-2 pr-4 text-white"
-            style={{
-              opacity: Math.min(1, Math.abs(translateX) / 40),
-              transition: isAnimating ? 'opacity 200ms ease-out' : 'none',
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {/* Red delete strip — only covers the exposed gap on the right */}
+      {translateX < 0 && (
+        <div
+          className="absolute top-0 bottom-0 right-0 bg-red-600 flex items-center justify-center"
+          style={{
+            width: `${Math.abs(translateX)}px`,
+            transition: isAnimating ? 'width 200ms ease-out' : 'none',
+          }}
+        >
+          {Math.abs(translateX) > 20 && (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 6h18" />
               <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
             </svg>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Foreground content */}
       <div

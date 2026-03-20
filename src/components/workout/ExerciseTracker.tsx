@@ -1,6 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import YouTubeThumb from '../ui/YouTubeThumb';
-import { CircularTimer } from '../ui/CircularTimer';
+import {
+  CircularTimer,
+  unlockAudio,
+  startAudioKeepAlive,
+  stopAudioKeepAlive,
+  requestTimerNotificationPermission,
+  showRestNotification,
+} from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { SwipeableRow } from '../ui/SwipeableRow';
@@ -46,6 +53,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
   const [showRest, setShowRest] = useState(() => {
     return restTimerEnd !== null && restTimerEnd > Date.now();
   });
+  const [restCompleted, setRestCompleted] = useState(false);
 
   // Sync showRest with restTimerEnd from context (e.g., after page navigation)
   useEffect(() => {
@@ -85,7 +93,12 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         return { ...s, completed: true, isPR };
       })
     );
+    // Unlock audio & request notification permission on user gesture (iOS requirement)
+    unlockAudio();
+    startAudioKeepAlive();
+    requestTimerNotificationPermission();
     // Start rest timer
+    setRestCompleted(false);
     const end = Date.now() + restSeconds * 1000;
     setRestTimerEnd(end);
     setShowRest(true);
@@ -97,9 +110,16 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     );
   };
 
+  const handleRestComplete = () => {
+    setRestCompleted(true);
+    showRestNotification();
+  };
+
   const dismissRest = () => {
+    stopAudioKeepAlive();
     setRestTimerEnd(null);
     setShowRest(false);
+    setRestCompleted(false);
   };
 
   const addSet = () => {
@@ -199,13 +219,43 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
   return (
     <div className="space-y-4 relative">
       {/* Rest timer overlay */}
-      {showRest && restTimerEnd && restTimerEnd > Date.now() && (
+      {showRest && restTimerEnd !== null && (
         <div className="fixed inset-0 bg-bg/95 z-50 flex flex-col items-center justify-center gap-6 backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">Rest Timer</p>
-          <CircularTimer duration={restSeconds} endTime={restTimerEnd} onComplete={dismissRest} size={180} />
-          <Button variant="secondary" onClick={dismissRest}>
-            Skip Rest
-          </Button>
+          {restCompleted ? (
+            <>
+              {/* Green screen flash */}
+              <div className="fixed inset-0 bg-emerald-400/20 pointer-events-none animate-timer-flash" />
+
+              {/* Bell icon */}
+              <div className="animate-bounce">
+                <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="text-center space-y-2">
+                <h2 className="text-4xl font-black text-emerald-400 animate-pulse tracking-tight">
+                  TIME'S UP!
+                </h2>
+                <p className="text-muted text-sm">Get back to your next set</p>
+              </div>
+
+              <Button onClick={dismissRest} fullWidth>
+                Let's Go!
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Rest Timer</p>
+              <CircularTimer duration={restSeconds} endTime={restTimerEnd} onComplete={handleRestComplete} size={180} />
+              <Button variant="secondary" onClick={dismissRest}>
+                Skip Rest
+              </Button>
+            </>
+          )}
         </div>
       )}
 
