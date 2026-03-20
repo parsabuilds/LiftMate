@@ -3,6 +3,7 @@ import YouTubeThumb from '../ui/YouTubeThumb';
 import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { SwipeableRow } from '../ui/SwipeableRow';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { useAuthContext } from '../../contexts/AuthContext';
 import type { SetRow } from '../../contexts/WorkoutContext';
@@ -105,6 +106,14 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
       ...sets,
       { setNumber: sets.length + 1, reps: 0, weight: 0, completed: false, isPR: false },
     ]);
+  };
+
+  const removeSet = (index: number) => {
+    if (sets.length <= 1) return;
+    setSets(
+      sets.filter((_, i) => i !== index)
+          .map((s, i) => ({ ...s, setNumber: i + 1 }))
+    );
   };
 
   // Build log saving ALL sets (including uncompleted with data)
@@ -271,68 +280,80 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
           <span className="text-center">Log</span>
         </div>
         {sets.map((set, i) => (
-          <div
+          <SwipeableRow
             key={i}
-            className={`grid grid-cols-4 gap-2 px-4 py-2.5 items-center border-b border-white/[0.04] last:border-0 ${
-              set.completed ? 'bg-success/[0.04]' : ''
-            }`}
+            onDelete={() => removeSet(i)}
+            disabled={set.completed || sets.length <= 1}
           >
-            <span className="text-text text-sm font-bold">{set.setNumber}</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={set.reps || ''}
-              onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
-              disabled={set.completed}
-              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-              placeholder={exercise.reps}
-            />
-            <input
-              type="number"
-              inputMode="numeric"
-              value={set.weight || ''}
-              onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
-              disabled={set.completed}
-              className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-              placeholder="lbs"
-            />
-            <div className="flex items-center gap-1">
-              {set.completed ? (
-                <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                  {set.isPR && <Badge text="NEW PR!" variant="success" />}
+            <div
+              className={`grid grid-cols-4 gap-2 px-4 py-2.5 items-center border-b border-white/[0.04] last:border-0 transition-colors duration-500 ${
+                set.completed
+                  ? 'bg-success/[0.15] border-l-[3px] border-l-success'
+                  : ''
+              }`}
+            >
+              <span className="text-text text-sm font-bold">{set.setNumber}</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={set.reps || ''}
+                onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
+                disabled={set.completed}
+                className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+                placeholder={exercise.reps}
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                value={set.weight || ''}
+                onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
+                disabled={set.completed}
+                className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
+                placeholder="lbs"
+              />
+              <div className="flex items-center gap-1">
+                {set.completed ? (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    {set.isPR && <Badge text="NEW PR!" variant="success" />}
+                    <button
+                      onClick={() => editSet(i)}
+                      className="w-7 h-7 rounded-lg text-muted hover:text-primary hover:bg-primary/10 flex items-center justify-center transition-colors ml-1"
+                      title="Edit set"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                        <path d="m15 5 4 4" />
+                      </svg>
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={() => editSet(i)}
-                    className="w-7 h-7 rounded-lg text-muted hover:text-primary hover:bg-primary/10 flex items-center justify-center transition-colors ml-1"
-                    title="Edit set"
+                    onClick={() => confirmSet(i)}
+                    disabled={set.reps === 0 || set.weight === 0}
+                    className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      <path d="m15 5 4 4" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6 9 17l-5-5" />
                     </svg>
                   </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => confirmSet(i)}
-                  disabled={set.reps === 0 || set.weight === 0}
-                  className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </button>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          </SwipeableRow>
         ))}
       </div>
 
-      <button onClick={addSet} className="text-primary text-sm font-bold hover:underline">
-        + Add Set
-      </button>
+      <div className="flex items-center justify-between">
+        <button onClick={addSet} className="text-primary text-sm font-bold hover:underline">
+          + Add Set
+        </button>
+        {sets.filter(s => !s.completed).length > 1 && (
+          <p className="text-muted text-xs">Swipe left to remove</p>
+        )}
+      </div>
 
       <Button fullWidth disabled={!hasCompletedSet} onClick={goToNext}>
         {currentExerciseIndex >= exercises.length - 1 ? 'Finish Exercises' : 'Next Exercise'}
