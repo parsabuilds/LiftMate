@@ -89,13 +89,7 @@ export function SwipeableRow({ children, onDelete, disabled }: SwipeableRowProps
   return (
     <div ref={rowRef} className="relative overflow-hidden">
       {/* Red delete background */}
-      <div className="absolute inset-y-0 right-0 w-12 bg-red-500 flex items-center justify-center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 6h18" />
-          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-        </svg>
-      </div>
+      <div className="absolute inset-y-0 right-0 w-4 bg-red-500" />
 
       {/* Foreground content */}
       <div
