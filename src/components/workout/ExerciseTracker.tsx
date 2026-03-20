@@ -290,19 +290,6 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
         {currentExerciseIndex === 0 ? 'Back' : 'Previous Exercise'}
       </button>
 
-      {/* Progress */}
-      <div className="flex items-center gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-          Exercise {currentExerciseIndex + 1}/{exercises.length}
-        </p>
-        <div className="flex-1 h-1 bg-white/[0.06] rounded-full">
-          <div
-            className="h-1 bg-primary rounded-full transition-all"
-            style={{ width: `${((currentExerciseIndex + 1) / exercises.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
       {/* Exercise info */}
       <div className="flex items-start gap-3">
         {exercise.youtubeId && (
