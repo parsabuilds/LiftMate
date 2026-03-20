@@ -37,8 +37,8 @@ export function WorkoutCard() {
 
   const dayTypes = routine.days.map((d) => d.dayType);
 
-  // Find today's completed workout (if any)
-  const todaysLog = workoutLogs.find((l) => l.date === today && l.completedAt);
+  // Find today's completed workouts (if any)
+  const todaysLogs = workoutLogs.filter((l) => l.date === today && l.completedAt);
 
   // Determine suggested day — cycle based on last completed workout
   const sortedLogs = [...workoutLogs]
@@ -133,22 +133,88 @@ export function WorkoutCard() {
   }
 
   // Default: no active workout
-  const activeDayType = todaysLog ? todaysLog.dayType : suggestedDayType;
-  const routineDay = routine.days.find((d) => d.dayType === activeDayType);
+  const suggestedRoutineDay = routine.days.find((d) => d.dayType === suggestedDayType);
 
-  if (!routineDay) return null;
+  // If there are completed workouts today, show them all + option to start another
+  if (todaysLogs.length > 0) {
+    return (
+      <div className="space-y-3">
+        {/* Completed workout cards */}
+        {todaysLogs.map((log) => {
+          const rd = routine.days.find((d) => d.dayType === log.dayType);
+          const muscles = rd ? rd.muscleGroups.map((g) => g.name).join(' & ') : '';
+          return (
+            <button
+              key={log.id}
+              onClick={() => navigate(`/workout/edit/${log.id}`)}
+              className="group relative w-full text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+            >
+              <div className="absolute -inset-px bg-gradient-to-br from-success/30 via-success/10 to-transparent rounded-2xl" />
+              <div className="relative bg-card m-px rounded-2xl p-4 overflow-hidden">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-success">Completed</span>
+                </div>
+                <h3 className="text-lg font-black text-text tracking-tight">
+                  {log.dayType}
+                  {muscles && <span className="text-muted font-semibold text-base"> — {muscles}</span>}
+                </h3>
+                <p className="text-muted text-sm">{log.exercises.length} exercises</p>
+              </div>
+            </button>
+          );
+        })}
 
-  const muscleNames = routineDay.muscleGroups.map((g) => g.name).join(' & ');
-  const totalExercises = routineDay.muscleGroups.reduce((sum, g) => sum + g.exercises.length, 0);
+        {/* Start Another Workout */}
+        <button
+          onClick={() => navigate('/workout')}
+          className="group relative w-full text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+        >
+          <div className="absolute -inset-px bg-gradient-to-br from-primary/50 via-primary/20 to-primary/5 rounded-2xl" />
+          <div className="relative bg-card m-px rounded-2xl p-5 overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.06] rounded-full blur-[60px] pointer-events-none" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary">
+                Next Up
+              </span>
+            </div>
+            <h3 className="text-xl font-black text-text tracking-tight leading-snug">
+              {suggestedDayType}
+              {suggestedRoutineDay && (
+                <>
+                  <span className="text-muted font-bold"> — </span>
+                  <span className="text-muted font-semibold text-lg">
+                    {suggestedRoutineDay.muscleGroups.map((g) => g.name).join(' & ')}
+                  </span>
+                </>
+              )}
+            </h3>
+            <div className="mt-5 flex justify-center">
+              <span className="inline-flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-primary rounded-xl text-base font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                </svg>
+                Start Another Workout
+              </span>
+            </div>
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  // No completed workouts today — show suggested workout
+  if (!suggestedRoutineDay) return null;
+
+  const muscleNames = suggestedRoutineDay.muscleGroups.map((g) => g.name).join(' & ');
+  const totalExercises = suggestedRoutineDay.muscleGroups.reduce((sum, g) => sum + g.exercises.length, 0);
   const estMinutes = Math.round(totalExercises * 5.5);
-
-  // Progress — if todaysLog exists it's always a completed workout (filtered by completedAt on line 40)
-  const progressPct = todaysLog ? 100 : 0;
 
   return (
     <div className="space-y-3">
       <button
-        onClick={() => navigate(todaysLog ? `/workout/edit/${todaysLog.id}` : '/workout')}
+        onClick={() => navigate('/workout')}
         className="group relative w-full text-left rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
       >
         {/* Gradient border */}
@@ -169,7 +235,7 @@ export function WorkoutCard() {
 
           {/* Title */}
           <h3 className="text-xl font-black text-text tracking-tight leading-snug">
-            {activeDayType}
+            {suggestedDayType}
             <span className="text-muted font-bold"> — </span>
             <span className="text-muted font-semibold text-lg">{muscleNames}</span>
           </h3>
@@ -179,37 +245,13 @@ export function WorkoutCard() {
             {totalExercises} exercises · ~{estMinutes} min
           </p>
 
-          {/* Progress bar (only if workout started today) */}
-          {todaysLog && (
-            <div className="flex items-center gap-3 mt-3">
-              <div className="flex-1 h-1.5 bg-border/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <span className="text-xs font-bold text-primary">{progressPct}%</span>
-            </div>
-          )}
-
-          {/* Start Workout / Edit button */}
+          {/* Start Workout button */}
           <div className="mt-5 flex justify-center">
             <span className="inline-flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-primary rounded-xl text-base font-bold text-white shadow-lg shadow-primary/25 group-active:shadow-primary/10 transition-all">
-              {todaysLog ? (
-                <>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
-                  </svg>
-                  View & Edit Workout
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                  </svg>
-                  Start Workout
-                </>
-              )}
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+              </svg>
+              Start Workout
             </span>
           </div>
         </div>

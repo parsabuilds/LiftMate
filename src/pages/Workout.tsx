@@ -57,9 +57,11 @@ export function Workout() {
     user ? `users/${user.uid}/workoutLogs` : null
   );
 
-  const todaysLog = useMemo(() => {
+  const todaysLogs = useMemo(() => {
     const today = getLocalDateString();
-    return previousWorkouts.find((w) => w.date === today && w.completedAt);
+    return previousWorkouts
+      .filter((w) => w.date === today && w.completedAt)
+      .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
   }, [previousWorkouts]);
 
   const previousLogsForDay = useMemo(() => {
@@ -280,43 +282,45 @@ export function Workout() {
         )}
 
         {currentStep === 'daySelect' && (
-          todaysLog && !dismissedSummary ? (
+          todaysLogs.length > 0 && !dismissedSummary ? (
             <div className="space-y-4">
-              <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-success">
-                    Workout Completed
-                  </span>
+              {todaysLogs.map((log) => (
+                <div key={log.id} className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-success" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-success">
+                      Workout Completed
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-text tracking-tight">
+                    {log.dayType}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-bg/50 rounded-xl p-3 text-center">
+                      <p className="text-xs text-muted font-semibold uppercase">Exercises</p>
+                      <p className="text-lg font-black text-text">{log.exercises.length}</p>
+                    </div>
+                    <div className="bg-bg/50 rounded-xl p-3 text-center">
+                      <p className="text-xs text-muted font-semibold uppercase">Sets</p>
+                      <p className="text-lg font-black text-text">
+                        {log.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)}
+                      </p>
+                    </div>
+                    <div className="bg-bg/50 rounded-xl p-3 text-center">
+                      <p className="text-xs text-muted font-semibold uppercase">Volume</p>
+                      <p className="text-lg font-black text-text">
+                        {log.exercises.reduce(
+                          (sum, ex) => sum + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Button fullWidth variant="secondary" onClick={() => navigate(`/workout/edit/${log.id}`)}>
+                    View & Edit
+                  </Button>
                 </div>
-                <h3 className="text-xl font-black text-text tracking-tight">
-                  {todaysLog.dayType}
-                </h3>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-bg/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted font-semibold uppercase">Exercises</p>
-                    <p className="text-lg font-black text-text">{todaysLog.exercises.length}</p>
-                  </div>
-                  <div className="bg-bg/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted font-semibold uppercase">Sets</p>
-                    <p className="text-lg font-black text-text">
-                      {todaysLog.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)}
-                    </p>
-                  </div>
-                  <div className="bg-bg/50 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted font-semibold uppercase">Volume</p>
-                    <p className="text-lg font-black text-text">
-                      {todaysLog.exercises.reduce(
-                        (sum, ex) => sum + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <Button fullWidth onClick={() => navigate(`/workout/edit/${todaysLog.id}`)}>
-                View & Edit Workout
-              </Button>
-              <Button fullWidth variant="secondary" onClick={() => setDismissedSummary(true)}>
+              ))}
+              <Button fullWidth onClick={() => setDismissedSummary(true)}>
                 Start Another Workout
               </Button>
             </div>
