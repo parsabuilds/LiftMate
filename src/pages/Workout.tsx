@@ -247,26 +247,26 @@ export function Workout() {
         {currentStep !== 'daySelect' && currentStep !== 'exerciseSelect' && <div className="flex items-center gap-1.5 mb-5">
           <div className="flex-1 flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
-              workoutPhase === 'pre' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+              workoutPhase === 'pre' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/[0.08]'
             }`} />
             <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-              workoutPhase === 'pre' ? 'text-primary' : 'text-muted/50'
+              workoutPhase === 'pre' ? 'text-emerald-400' : 'text-muted/50'
             }`}>Warm-Up</span>
           </div>
           <div className="flex-[2] flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
-              workoutPhase === 'main' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+              workoutPhase === 'main' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/[0.08]'
             }`} />
             <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-              workoutPhase === 'main' ? 'text-primary' : 'text-muted/50'
+              workoutPhase === 'main' ? 'text-emerald-400' : 'text-muted/50'
             }`}>Workout</span>
           </div>
           <div className="flex-1 flex flex-col items-center gap-1">
             <div className={`w-full h-1.5 rounded-full transition-all duration-300 ${
-              workoutPhase === 'post' ? 'bg-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-white/[0.08]'
+              workoutPhase === 'post' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/[0.08]'
             }`} />
             <span className={`text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-              workoutPhase === 'post' ? 'text-primary' : 'text-muted/50'
+              workoutPhase === 'post' ? 'text-emerald-400' : 'text-muted/50'
             }`}>Cool-Down</span>
           </div>
         </div>}
