@@ -30,7 +30,7 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
     });
   };
 
-  const allGroupsHaveSelection = muscleGroups.every(
+  const anyGroupHasSelection = muscleGroups.some(
     (mg) => (selections[mg.name]?.length ?? 0) > 0
   );
 
@@ -79,7 +79,7 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
         </div>
       ))}
 
-      <Button fullWidth disabled={!allGroupsHaveSelection} onClick={() => onComplete(selections)}>
+      <Button fullWidth disabled={!anyGroupHasSelection} onClick={() => onComplete(selections)}>
         Start Workout
       </Button>
     </div>
