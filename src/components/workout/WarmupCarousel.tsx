@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import type { Warmup } from '../../types';
