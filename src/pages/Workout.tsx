@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
@@ -8,6 +8,7 @@ import { WarmupCarousel } from '../components/workout/WarmupCarousel';
 import { ExerciseTracker } from '../components/workout/ExerciseTracker';
 import { CardioAbsSelector } from '../components/workout/CardioAbsSelector';
 import { WorkoutSummary } from '../components/workout/WorkoutSummary';
+import { AddExerciseModal } from '../components/workout/AddExerciseModal';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { useCollection, useDocument } from '../hooks/useFirestore';
@@ -36,8 +37,8 @@ export function Workout() {
     startTime,
     isRest, setIsRest,
     clearWorkout,
-    setCurrentExerciseIndex,
-    setInProgressLogs,
+    currentExerciseIndex, setCurrentExerciseIndex,
+    inProgressLogs, setInProgressLogs,
     setCurrentSets,
   } = useWorkoutContext();
 
@@ -140,6 +141,68 @@ export function Workout() {
     setExerciseLogs(logs);
     setCurrentStep('cardioAbs');
   };
+
+  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+
+  const handleDeleteExercise = useCallback((indexToDelete: number) => {
+    const newExercises = selectedExercises.filter((_, i) => i !== indexToDelete);
+
+    if (newExercises.length === 0) {
+      setExerciseLogs([]);
+      setSelectedExercises([]);
+      setInProgressLogs([]);
+      setCurrentExerciseIndex(0);
+      setCurrentSets([]);
+      setCurrentStep('cardioAbs');
+      return;
+    }
+
+    // Rebuild inProgressLogs without the deleted index
+    const newLogs: ExerciseLog[] = [];
+    for (let i = 0; i < selectedExercises.length; i++) {
+      if (i === indexToDelete) continue;
+      newLogs.push(inProgressLogs[i]);
+    }
+
+    // Adjust currentExerciseIndex
+    let newIndex = currentExerciseIndex;
+    if (indexToDelete < currentExerciseIndex) {
+      newIndex = currentExerciseIndex - 1;
+    } else if (indexToDelete === currentExerciseIndex) {
+      if (newIndex >= newExercises.length) {
+        newIndex = newExercises.length - 1;
+      }
+    }
+
+    setSelectedExercises(newExercises);
+    setInProgressLogs(newLogs);
+    setCurrentExerciseIndex(newIndex);
+
+    // Restore sets for the new current exercise
+    const targetLog = newLogs[newIndex];
+    if (targetLog && targetLog.sets && targetLog.sets.length > 0) {
+      setCurrentSets(targetLog.sets.map((s) => ({
+        setNumber: s.setNumber,
+        reps: s.reps,
+        weight: s.weight,
+        completed: s.completed,
+        isPR: s.isPR ?? false,
+      })));
+    } else {
+      const ex = newExercises[newIndex];
+      setCurrentSets(Array.from({ length: ex.sets }, (_, i) => ({
+        setNumber: i + 1,
+        reps: 0,
+        weight: 0,
+        completed: false,
+        isPR: false,
+      })));
+    }
+  }, [selectedExercises, inProgressLogs, currentExerciseIndex, setSelectedExercises, setInProgressLogs, setCurrentExerciseIndex, setCurrentSets, setExerciseLogs, setCurrentStep]);
+
+  const handleAddExercise = useCallback((exercise: Exercise) => {
+    setSelectedExercises([...selectedExercises, exercise]);
+  }, [selectedExercises, setSelectedExercises]);
 
   const handlePostWorkoutSelect = (activities: PostWorkoutActivities) => {
     setPostWorkout(activities);
@@ -341,12 +404,23 @@ export function Workout() {
         )}
 
         {currentStep === 'logging' && (
-          <ExerciseTracker
-            exercises={selectedExercises}
-            previousLogs={previousLogsForDay}
-            onComplete={handleLoggingComplete}
-            onBack={goBack}
-          />
+          <>
+            <ExerciseTracker
+              exercises={selectedExercises}
+              previousLogs={previousLogsForDay}
+              onComplete={handleLoggingComplete}
+              onBack={goBack}
+              onDeleteExercise={handleDeleteExercise}
+              onAddExercise={() => setShowAddExerciseModal(true)}
+            />
+            <AddExerciseModal
+              isOpen={showAddExerciseModal}
+              onClose={() => setShowAddExerciseModal(false)}
+              onAdd={handleAddExercise}
+              selectedExerciseIds={new Set(selectedExercises.map(ex => ex.id))}
+              routineDay={routineDay}
+            />
+          </>
         )}
 
         {currentStep === 'cardioAbs' && (

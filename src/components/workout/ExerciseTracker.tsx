@@ -22,6 +22,8 @@ interface ExerciseTrackerProps {
   previousLogs?: ExerciseLog[];
   onComplete: (logs: ExerciseLog[]) => void;
   onBack: () => void;
+  onDeleteExercise: (index: number) => void;
+  onAddExercise: () => void;
 }
 
 function initSets(exercise: Exercise): SetRow[] {
@@ -34,7 +36,7 @@ function initSets(exercise: Exercise): SetRow[] {
   }));
 }
 
-export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }: ExerciseTrackerProps) {
+export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, onDeleteExercise, onAddExercise }: ExerciseTrackerProps) {
   const { profile } = useAuthContext();
   const restSeconds = profile?.restSeconds ?? 90;
 
@@ -50,6 +52,8 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
   } = useWorkoutContext();
 
   // Show rest overlay if there's an active timer
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
+
   const [showRest, setShowRest] = useState(() => {
     return restTimerEnd !== null && restTimerEnd > Date.now();
   });
@@ -209,6 +213,28 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     navigateToExercise(currentExerciseIndex - 1);
   }, [currentExerciseIndex, navigateToExercise, onBack]);
 
+  const skipExercise = useCallback(() => {
+    const exerciseLog = buildLogForCurrentExercise();
+    const updatedLogs = [...inProgressLogs];
+    updatedLogs[currentExerciseIndex] = exerciseLog;
+
+    if (currentExerciseIndex >= exercises.length - 1) {
+      const finalLogs = updatedLogs
+        .filter(Boolean)
+        .map(log => ({
+          ...log,
+          sets: log.sets.filter(s => s.completed),
+        }))
+        .filter(log => log.sets.length > 0);
+      onComplete(finalLogs);
+    } else {
+      setInProgressLogs(updatedLogs);
+      const nextIndex = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIndex);
+      restoreSetsFromLog(updatedLogs[nextIndex], exercises[nextIndex]);
+    }
+  }, [buildLogForCurrentExercise, inProgressLogs, currentExerciseIndex, exercises, onComplete, setCurrentExerciseIndex, setInProgressLogs, restoreSetsFromLog]);
+
   if (!exercise) return null;
 
   const equipmentType = getEquipmentType(exercise.name);
@@ -260,27 +286,76 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
       )}
 
       {/* Exercise navigation pills — tap to jump to any exercise */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 items-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {exercises.map((ex, i) => {
           const hasData = inProgressLogs[i] && inProgressLogs[i].sets.some(s => s.completed);
           const isCurrent = i === currentExerciseIndex;
           return (
-            <button
-              key={ex.id}
-              onClick={() => navigateToExercise(i)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                isCurrent
-                  ? 'bg-primary text-white'
-                  : hasData
-                    ? 'bg-success/20 text-success border border-success/30'
-                    : 'bg-card/60 text-muted border border-white/[0.06]'
-              }`}
-            >
-              {ex.name.length > 15 ? ex.name.slice(0, 15) + '…' : ex.name}
-            </button>
+            <div key={ex.id} className="flex-shrink-0 relative">
+              <button
+                onClick={() => navigateToExercise(i)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  isCurrent
+                    ? `bg-primary text-white ${exercises.length > 1 ? 'pr-7' : ''}`
+                    : hasData
+                      ? 'bg-success/20 text-success border border-success/30'
+                      : 'bg-card/60 text-muted border border-white/[0.06]'
+                }`}
+              >
+                {ex.name.length > 15 ? ex.name.slice(0, 15) + '\u2026' : ex.name}
+              </button>
+              {isCurrent && exercises.length > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteIndex(i); }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center hover:bg-red-500/40 transition-colors"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18" /><path d="M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           );
         })}
+        <button
+          onClick={onAddExercise}
+          className="flex-shrink-0 w-8 h-8 rounded-full bg-card/60 border border-dashed border-white/20 flex items-center justify-center text-muted hover:text-primary hover:border-primary/50 transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14" /><path d="M5 12h14" />
+          </svg>
+        </button>
       </div>
+
+      {/* Delete exercise confirmation */}
+      {confirmDeleteIndex !== null && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-text">
+            Remove <span className="font-bold">{exercises[confirmDeleteIndex]?.name}</span>?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmDeleteIndex(null)}
+              className="px-3 py-1 text-xs font-bold text-muted hover:text-text transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                const exerciseLog = buildLogForCurrentExercise();
+                const updatedLogs = [...inProgressLogs];
+                updatedLogs[currentExerciseIndex] = exerciseLog;
+                setInProgressLogs(updatedLogs);
+                onDeleteExercise(confirmDeleteIndex);
+                setConfirmDeleteIndex(null);
+              }}
+              className="px-3 py-1 text-xs font-bold text-red-400 hover:text-red-300 transition-colors"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Back / Previous button */}
       <button onClick={goToPrev} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
@@ -413,6 +488,15 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
       <Button fullWidth disabled={!hasCompletedSet} onClick={goToNext}>
         {currentExerciseIndex >= exercises.length - 1 ? 'Finish Exercises' : 'Next Exercise'}
       </Button>
+
+      {!hasCompletedSet && (
+        <button
+          onClick={skipExercise}
+          className="w-full text-center text-muted text-sm font-semibold hover:text-text transition-colors py-1"
+        >
+          Skip Exercise
+        </button>
+      )}
     </div>
   );
 }
