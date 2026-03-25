@@ -25,6 +25,7 @@ interface WorkoutState {
   inProgressLogs: ExerciseLog[];
   currentSets: SetRow[];
   restTimerEnd: number | null;
+  firstSetConfirmedAt: number | null;
 }
 
 const defaultState: WorkoutState = {
@@ -40,6 +41,7 @@ const defaultState: WorkoutState = {
   inProgressLogs: [],
   currentSets: [],
   restTimerEnd: null,
+  firstSetConfirmedAt: null,
 };
 
 function loadState(): WorkoutState | null {
@@ -80,6 +82,7 @@ interface WorkoutContextValue extends WorkoutState {
   setInProgressLogs: (logs: ExerciseLog[]) => void;
   setCurrentSets: (sets: SetRow[]) => void;
   setRestTimerEnd: (end: number | null) => void;
+  setFirstSetConfirmedAt: (time: number | null) => void;
   clearWorkout: () => void;
 }
 
@@ -141,6 +144,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, restTimerEnd: end }));
   }, []);
 
+  const setFirstSetConfirmedAt = useCallback((time: number | null) => {
+    setState((prev) => ({ ...prev, firstSetConfirmedAt: time }));
+  }, []);
+
   const clearWorkout = useCallback(() => {
     removeState();
     setState({ ...defaultState, startTime: Date.now() });
@@ -161,6 +168,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setInProgressLogs,
         setCurrentSets,
         setRestTimerEnd,
+        setFirstSetConfirmedAt,
         clearWorkout,
       }}
     >

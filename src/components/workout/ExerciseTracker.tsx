@@ -49,6 +49,8 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
     setCurrentSets: setSets,
     restTimerEnd,
     setRestTimerEnd,
+    firstSetConfirmedAt,
+    setFirstSetConfirmedAt,
   } = useWorkoutContext();
 
   // Show rest overlay if there's an active timer
@@ -90,6 +92,9 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
   };
 
   const confirmSet = (index: number) => {
+    if (firstSetConfirmedAt === null) {
+      setFirstSetConfirmedAt(Date.now());
+    }
     setSets(
       sets.map((s, i) => {
         if (i !== index) return s;

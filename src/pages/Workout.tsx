@@ -40,6 +40,7 @@ export function Workout() {
     currentExerciseIndex, setCurrentExerciseIndex,
     inProgressLogs, setInProgressLogs,
     setCurrentSets,
+    firstSetConfirmedAt,
   } = useWorkoutContext();
 
   const { data: firestoreRoutine } = useDocument<Routine>(
@@ -219,7 +220,7 @@ export function Workout() {
     setSaveError(null);
     try {
       const workoutLog: Record<string, unknown> = {
-        date: getLocalDateString(),
+        date: getLocalDateString(firstSetConfirmedAt ? new Date(firstSetConfirmedAt) : undefined),
         dayType: selectedDayType,
         startedAt: startTime,
         completedAt: Date.now(),
