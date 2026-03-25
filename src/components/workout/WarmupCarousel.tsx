@@ -90,7 +90,7 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
           <img
             src={`/images/stretches/${nextIllustration}.png`}
             alt={nextName ?? ''}
-            className="w-40 h-40 object-contain rounded-xl"
+            className="w-60 h-60 object-contain rounded-xl"
           />
         )}
 
@@ -126,7 +126,7 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
         <img
           src={`/images/stretches/${displayIllustration}.png`}
           alt={displayName}
-          className="w-40 h-40 object-contain rounded-xl"
+          className="w-60 h-60 object-contain rounded-xl"
         />
       )}
 
