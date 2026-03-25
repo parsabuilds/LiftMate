@@ -7,9 +7,9 @@ export const mensRoutine: Routine = {
     {
       dayType: 'Push',
       warmups: [
-        { id: 'push-warmup-1', name: 'Jumping Jacks', duration: '2 min' },
-        { id: 'push-warmup-2', name: 'Arm Circles', duration: '1 min' },
-        { id: 'push-warmup-3', name: 'Band Pull-Aparts', duration: '1 min' },
+        { id: 'push-stretch-1', name: 'Doorway Chest Stretch', duration: '30 sec', illustration: 'doorway-chest-stretch', alternative: { name: 'Wall Chest Stretch', duration: '30 sec', illustration: 'wall-chest-stretch' } },
+        { id: 'push-stretch-2', name: 'Overhead Triceps Stretch', duration: '30 sec', illustration: 'overhead-triceps-stretch', alternative: { name: 'Triceps Towel Stretch', duration: '30 sec', illustration: 'triceps-towel-stretch' } },
+        { id: 'push-stretch-3', name: 'Cross-Body Shoulder Stretch', duration: '30 sec', illustration: 'cross-body-shoulder-stretch', alternative: { name: 'Behind-Back Shoulder Stretch', duration: '30 sec', illustration: 'behind-back-shoulder-stretch' } },
       ],
       muscleGroups: [
         {
@@ -39,9 +39,9 @@ export const mensRoutine: Routine = {
     {
       dayType: 'Pull',
       warmups: [
-        { id: 'pull-warmup-1', name: 'Jumping Jacks', duration: '2 min' },
-        { id: 'pull-warmup-2', name: 'Arm Circles', duration: '1 min' },
-        { id: 'pull-warmup-3', name: 'Band Pull-Aparts', duration: '1 min' },
+        { id: 'pull-stretch-1', name: 'Pelvic Tilts (On Floor)', duration: '30 sec', illustration: 'pelvic-tilts', alternative: { name: 'Lying Knee-to-Chest Stretch', duration: '30 sec', illustration: 'lying-knee-to-chest' } },
+        { id: 'pull-stretch-2', name: 'Standing Biceps Wall Stretch', duration: '30 sec', illustration: 'standing-biceps-wall-stretch', alternative: { name: 'Seated Biceps Stretch', duration: '30 sec', illustration: 'seated-biceps-stretch' } },
+        { id: 'pull-stretch-3', name: 'Child\'s Pose', duration: '30 sec', illustration: 'childs-pose', alternative: { name: 'Thread the Needle Stretch', duration: '30 sec', illustration: 'thread-the-needle' } },
       ],
       muscleGroups: [
         {
@@ -71,9 +71,9 @@ export const mensRoutine: Routine = {
     {
       dayType: 'Legs + Shoulders',
       warmups: [
-        { id: 'legs-warmup-1', name: 'Jumping Jacks', duration: '2 min' },
-        { id: 'legs-warmup-2', name: 'Bodyweight Squats', duration: '1 min' },
-        { id: 'legs-warmup-3', name: 'Leg Swings', duration: '1 min' },
+        { id: 'legs-stretch-1', name: 'Standing Quad Stretch', duration: '30 sec', illustration: 'standing-quad-stretch', alternative: { name: 'Lying Quad Stretch', duration: '30 sec', illustration: 'lying-quad-stretch' } },
+        { id: 'legs-stretch-2', name: 'Seated Hamstring Stretch', duration: '30 sec', illustration: 'seated-hamstring-stretch', alternative: { name: 'Standing Hamstring Stretch', duration: '30 sec', illustration: 'standing-hamstring-stretch' } },
+        { id: 'legs-stretch-3', name: 'Cross-Body Shoulder Stretch', duration: '30 sec', illustration: 'cross-body-shoulder-stretch', alternative: { name: 'Behind-Back Shoulder Stretch', duration: '30 sec', illustration: 'behind-back-shoulder-stretch' } },
       ],
       muscleGroups: [
         {
@@ -110,9 +110,9 @@ export const womensRoutine: Routine = {
     {
       dayType: 'Lower Body - Glute Focus',
       warmups: [
-        { id: 'wlg-warmup-1', name: 'Hip Circles', duration: '1 min' },
-        { id: 'wlg-warmup-2', name: 'Glute Bridges', duration: '1 min' },
-        { id: 'wlg-warmup-3', name: 'Leg Swings', duration: '1 min' },
+        { id: 'wlg-stretch-1', name: 'Pigeon Stretch', duration: '30 sec', illustration: 'pigeon-stretch', alternative: { name: 'Seated Figure-4 Stretch', duration: '30 sec', illustration: 'seated-figure-4-stretch' } },
+        { id: 'wlg-stretch-2', name: 'Lying Hamstring Stretch', duration: '30 sec', illustration: 'lying-hamstring-stretch', alternative: { name: 'Standing Hamstring Stretch', duration: '30 sec', illustration: 'standing-hamstring-stretch' } },
+        { id: 'wlg-stretch-3', name: 'Figure-4 Stretch', duration: '30 sec', illustration: 'figure-4-stretch', alternative: { name: 'Knee-to-Chest Stretch', duration: '30 sec', illustration: 'knee-to-chest-stretch' } },
       ],
       muscleGroups: [
         {
@@ -139,9 +139,9 @@ export const womensRoutine: Routine = {
     {
       dayType: 'Upper Body',
       warmups: [
-        { id: 'wub-warmup-1', name: 'Arm Circles', duration: '1 min' },
-        { id: 'wub-warmup-2', name: 'Shoulder Rolls', duration: '1 min' },
-        { id: 'wub-warmup-3', name: 'Cat-Cow', duration: '1 min' },
+        { id: 'wub-stretch-1', name: 'Doorway Chest Stretch', duration: '30 sec', illustration: 'doorway-chest-stretch', alternative: { name: 'Wall Chest Stretch', duration: '30 sec', illustration: 'wall-chest-stretch' } },
+        { id: 'wub-stretch-2', name: 'Cross-Body Shoulder Stretch', duration: '30 sec', illustration: 'cross-body-shoulder-stretch', alternative: { name: 'Behind-Back Shoulder Stretch', duration: '30 sec', illustration: 'behind-back-shoulder-stretch' } },
+        { id: 'wub-stretch-3', name: 'Overhead Triceps Stretch', duration: '30 sec', illustration: 'overhead-triceps-stretch', alternative: { name: 'Triceps Towel Stretch', duration: '30 sec', illustration: 'triceps-towel-stretch' } },
       ],
       muscleGroups: [
         {
@@ -168,9 +168,9 @@ export const womensRoutine: Routine = {
     {
       dayType: 'Lower Body - Quad Focus',
       warmups: [
-        { id: 'wlq-warmup-1', name: 'Bodyweight Squats', duration: '1 min' },
-        { id: 'wlq-warmup-2', name: 'Hip Flexor Stretch', duration: '1 min' },
-        { id: 'wlq-warmup-3', name: 'Ankle Circles', duration: '1 min' },
+        { id: 'wlq-stretch-1', name: 'Standing Quad Stretch', duration: '30 sec', illustration: 'standing-quad-stretch', alternative: { name: 'Lying Quad Stretch', duration: '30 sec', illustration: 'lying-quad-stretch' } },
+        { id: 'wlq-stretch-2', name: 'Calf Stretch (Wall)', duration: '30 sec', illustration: 'calf-wall-stretch', alternative: { name: 'Step Calf Stretch', duration: '30 sec', illustration: 'step-calf-stretch' } },
+        { id: 'wlq-stretch-3', name: 'Hip Flexor Stretch', duration: '30 sec', illustration: 'hip-flexor-stretch', alternative: { name: 'Butterfly Stretch', duration: '30 sec', illustration: 'butterfly-stretch' } },
       ],
       muscleGroups: [
         {

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
+import { stretchIllustrations } from './StretchIllustrations';
 import type { Warmup } from '../../types';
 
 interface WarmupCarouselProps {
@@ -19,6 +20,7 @@ function parseDuration(duration: string): number {
 export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timerKey, setTimerKey] = useState(0);
+  const [swapped, setSwapped] = useState<Record<number, boolean>>({});
 
   const advance = useCallback(() => {
     if (currentIndex >= warmups.length - 1) {
@@ -35,20 +37,50 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
   }
 
   const warmup = warmups[currentIndex];
-  const duration = parseDuration(warmup.duration);
+  const isSwapped = swapped[currentIndex] ?? false;
+  const alt = warmup.alternative;
+
+  // Resolve which stretch to show (primary or alternative)
+  const displayName = isSwapped && alt ? alt.name : warmup.name;
+  const displayDuration = isSwapped && alt ? alt.duration : warmup.duration;
+  const displayIllustration = isSwapped && alt ? alt.illustration : warmup.illustration;
+
+  const duration = parseDuration(displayDuration);
   const endTimeRef = useRef(Date.now() + duration * 1000);
 
-  // Reset endTime when warmup changes
+  // Reset endTime when warmup changes or swaps
   useEffect(() => {
     endTimeRef.current = Date.now() + duration * 1000;
   }, [timerKey, duration]);
 
-  return (
-    <div className="flex flex-col items-center space-y-6">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Warmup {currentIndex + 1} of {warmups.length}</p>
-      <h3 className="text-text text-2xl font-black text-center tracking-tight">{warmup.name}</h3>
+  const handleSwap = () => {
+    setSwapped((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }));
+    setTimerKey((prev) => prev + 1);
+  };
 
-      <CircularTimer key={timerKey} duration={duration} endTime={endTimeRef.current} onComplete={advance} size={160} />
+  const Illustration = displayIllustration ? stretchIllustrations[displayIllustration] : null;
+
+  return (
+    <div className="flex flex-col items-center space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Stretch {currentIndex + 1} of {warmups.length}</p>
+      <h3 className="text-text text-2xl font-black text-center tracking-tight">{displayName}</h3>
+
+      {Illustration && (
+        <div className="w-28 h-28 text-primary">
+          <Illustration className="w-full h-full" />
+        </div>
+      )}
+
+      <CircularTimer key={timerKey} duration={duration} endTime={endTimeRef.current} onComplete={advance} size={120} />
+
+      {alt && (
+        <button
+          onClick={handleSwap}
+          className="text-xs text-primary/70 hover:text-primary transition-colors"
+        >
+          Alternatively, do <span className="underline">{isSwapped ? warmup.name : alt.name}</span>
+        </button>
+      )}
 
       <div className="flex gap-2 justify-center">
         {warmups.map((_, i) => (

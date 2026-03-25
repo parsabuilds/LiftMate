@@ -49,6 +49,12 @@ export interface Warmup {
   id: string;
   name: string;
   duration: string;
+  illustration?: string;
+  alternative?: {
+    name: string;
+    duration: string;
+    illustration?: string;
+  };
 }
 
 export interface Routine {

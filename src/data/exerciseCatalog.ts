@@ -118,9 +118,9 @@ export const MUSCLE_GROUPS: CatalogMuscleGroup[] = [
 ];
 
 export const GENERIC_WARMUPS: Warmup[] = [
-  { id: 'generic-warmup-1', name: 'Jumping Jacks', duration: '2 min' },
-  { id: 'generic-warmup-2', name: 'Arm Circles', duration: '1 min' },
-  { id: 'generic-warmup-3', name: 'Bodyweight Squats', duration: '1 min' },
+  { id: 'generic-stretch-1', name: 'Standing Quad Stretch', duration: '30 sec', illustration: 'standing-quad-stretch', alternative: { name: 'Lying Quad Stretch', duration: '30 sec', illustration: 'lying-quad-stretch' } },
+  { id: 'generic-stretch-2', name: 'Cross-Body Shoulder Stretch', duration: '30 sec', illustration: 'cross-body-shoulder-stretch', alternative: { name: 'Behind-Back Shoulder Stretch', duration: '30 sec', illustration: 'behind-back-shoulder-stretch' } },
+  { id: 'generic-stretch-3', name: 'Pelvic Tilts (On Floor)', duration: '30 sec', illustration: 'pelvic-tilts', alternative: { name: 'Lying Knee-to-Chest Stretch', duration: '30 sec', illustration: 'lying-knee-to-chest' } },
 ];
 
 export function getExercisesForMuscleGroups(names: string[]) {

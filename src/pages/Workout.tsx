@@ -290,7 +290,7 @@ export function Workout() {
   const titles: Record<WorkoutStep, string> = {
     daySelect: 'Workout',
     exerciseSelect: 'Choose Exercises',
-    warmup: 'Warm Up',
+    warmup: 'Stretches',
     logging: selectedDayType ?? 'Workout',
     cardioAbs: 'Post-Workout',
     summary: 'Workout Complete',
