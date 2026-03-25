@@ -24,7 +24,7 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
 
   const endTimeRef = useRef(0);
 
-  const advance = useCallback(() => {
+  const goNext = useCallback(() => {
     if (currentIndex >= warmups.length - 1) {
       onComplete();
     } else {
@@ -34,15 +34,17 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
     }
   }, [currentIndex, warmups.length, onComplete]);
 
-  const handleTimerComplete = useCallback(() => {
-    if (currentIndex >= warmups.length - 1) {
-      onComplete();
-    } else {
-      setTimerRunning(false);
-      setCurrentIndex((prev) => prev + 1);
+  const goBack = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
       setTimerKey((prev) => prev + 1);
+      setTimerRunning(false);
     }
-  }, [currentIndex, warmups.length, onComplete]);
+  }, [currentIndex]);
+
+  const handleTimerComplete = useCallback(() => {
+    setTimerRunning(false);
+  }, []);
 
   if (warmups.length === 0) {
     onComplete();
@@ -111,8 +113,13 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
       </div>
 
       <div className="flex gap-3 w-full">
-        <Button variant="secondary" fullWidth onClick={advance}>
-          Skip
+        {currentIndex > 0 && (
+          <Button variant="ghost" fullWidth onClick={goBack}>
+            Back
+          </Button>
+        )}
+        <Button variant="secondary" fullWidth onClick={goNext}>
+          {currentIndex >= warmups.length - 1 ? 'Done' : 'Next'}
         </Button>
         <Button variant="ghost" fullWidth onClick={onComplete}>
           Skip All
