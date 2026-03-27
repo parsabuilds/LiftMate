@@ -15,6 +15,7 @@ const Goals = React.lazy(() => import('./pages/Goals').then(m => ({ default: m.G
 const Settings = React.lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
 const Nutrition = React.lazy(() => import('./pages/Nutrition'));
 const RoutineBuilder = React.lazy(() => import('./pages/RoutineBuilder').then(m => ({ default: m.RoutineBuilder })));
+const WorkoutEdit = React.lazy(() => import('./pages/WorkoutEdit').then(m => ({ default: m.WorkoutEdit })));
 
 function RouteSpinner() {
   return (
@@ -90,6 +91,7 @@ function AppContent() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/nutrition" element={<Nutrition />} />
             <Route path="/routine-builder" element={<RoutineBuilder />} />
+            <Route path="/workout/edit/:id" element={<WorkoutEdit />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CircularTimer } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import type { Warmup } from '../../types';
@@ -19,15 +19,32 @@ function parseDuration(duration: string): number {
 export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timerKey, setTimerKey] = useState(0);
+  const [swapped, setSwapped] = useState<Record<number, boolean>>({});
+  const [timerRunning, setTimerRunning] = useState(false);
 
-  const advance = useCallback(() => {
+  const endTimeRef = useRef(0);
+
+  const goNext = useCallback(() => {
     if (currentIndex >= warmups.length - 1) {
       onComplete();
     } else {
       setCurrentIndex((prev) => prev + 1);
       setTimerKey((prev) => prev + 1);
+      setTimerRunning(false);
     }
   }, [currentIndex, warmups.length, onComplete]);
+
+  const goBack = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+      setTimerKey((prev) => prev + 1);
+      setTimerRunning(false);
+    }
+  }, [currentIndex]);
+
+  const handleTimerComplete = useCallback(() => {
+    setTimerRunning(false);
+  }, []);
 
   if (warmups.length === 0) {
     onComplete();
@@ -35,14 +52,54 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
   }
 
   const warmup = warmups[currentIndex];
-  const duration = parseDuration(warmup.duration);
+  const isSwapped = swapped[currentIndex] ?? false;
+  const alt = warmup.alternative;
+
+  const displayName = isSwapped && alt ? alt.name : warmup.name;
+  const displayDuration = isSwapped && alt ? alt.duration : warmup.duration;
+  const displayIllustration = isSwapped && alt ? alt.illustration : warmup.illustration;
+
+  const duration = parseDuration(displayDuration);
+
+  const handleSwap = () => {
+    setSwapped((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }));
+    setTimerKey((prev) => prev + 1);
+    setTimerRunning(false);
+  };
+
+  const handleStartTimer = () => {
+    endTimeRef.current = Date.now() + duration * 1000;
+    setTimerRunning(true);
+  };
 
   return (
-    <div className="flex flex-col items-center space-y-6">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Warmup {currentIndex + 1} of {warmups.length}</p>
-      <h3 className="text-text text-2xl font-black text-center tracking-tight">{warmup.name}</h3>
+    <div className="flex flex-col items-center space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Stretch {currentIndex + 1} of {warmups.length}</p>
+      <h3 className="text-text text-2xl font-black text-center tracking-tight">{displayName}</h3>
 
-      <CircularTimer key={timerKey} duration={duration} onComplete={advance} size={160} />
+      {displayIllustration && (
+        <img
+          src={`/images/stretches/${displayIllustration}.png`}
+          alt={displayName}
+          className="w-full object-contain rounded-xl"
+        />
+      )}
+
+      {timerRunning ? (
+        <CircularTimer key={timerKey} duration={duration} endTime={endTimeRef.current} onComplete={handleTimerComplete} size={120} />
+      ) : (
+        <button
+          onClick={handleStartTimer}
+          className="relative inline-flex items-center justify-center text-primary hover:text-primary/80 transition-colors"
+          style={{ width: 120, height: 120 }}
+        >
+          <svg width={120} height={120} className="-rotate-90">
+            <circle cx={60} cy={60} r={54} fill="none" stroke="currentColor" strokeWidth={6} className="text-card" />
+            <circle cx={60} cy={60} r={54} fill="none" stroke="currentColor" strokeWidth={6} className="text-primary" strokeDasharray={2 * Math.PI * 54} strokeDashoffset={0} strokeLinecap="round" />
+          </svg>
+          <span className="absolute font-semibold text-sm text-primary">Start Timer</span>
+        </button>
+      )}
 
       <div className="flex gap-2 justify-center">
         {warmups.map((_, i) => (
@@ -56,13 +113,27 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
       </div>
 
       <div className="flex gap-3 w-full">
-        <Button variant="secondary" fullWidth onClick={advance}>
-          Skip
+        {currentIndex > 0 && (
+          <Button variant="ghost" fullWidth onClick={goBack}>
+            Back
+          </Button>
+        )}
+        <Button variant="secondary" fullWidth onClick={goNext}>
+          {currentIndex >= warmups.length - 1 ? 'Done' : 'Next'}
         </Button>
         <Button variant="ghost" fullWidth onClick={onComplete}>
           Skip All
         </Button>
       </div>
+
+      {alt && (
+        <button
+          onClick={handleSwap}
+          className="text-xs text-primary/70 hover:text-primary transition-colors mt-1"
+        >
+          Alternatively, do <span className="underline">{isSwapped ? warmup.name : alt.name}</span>
+        </button>
+      )}
     </div>
   );
 }

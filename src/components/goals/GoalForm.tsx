@@ -143,7 +143,7 @@ export function GoalForm({ isOpen, onClose, onSave, editingGoal }: GoalFormProps
                       value={m.title}
                       onChange={(e) => updateMilestoneTitle(m.id, e.target.value)}
                       placeholder="Milestone title"
-                      className="w-full min-h-[44px] bg-card border border-border rounded-xl px-4 py-2.5 text-text placeholder:text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm"
+                      className="w-full min-h-[44px] bg-card border border-border rounded-xl px-4 py-2.5 text-text placeholder:text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-base"
                     />
                     <input
                       type="date"

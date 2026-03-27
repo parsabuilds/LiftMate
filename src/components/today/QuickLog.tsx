@@ -109,7 +109,7 @@ export function QuickLog() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeight(); }}
                   placeholder="Enter weight"
                   autoFocus={isEditing}
-                  className="w-full min-h-[44px] bg-bg/60 border border-border/60 rounded-xl pl-11 pr-4 py-2.5 text-text placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all text-sm font-medium"
+                  className="w-full min-h-[44px] bg-bg/60 border border-border/60 rounded-xl pl-11 pr-4 py-2.5 text-text placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all text-base font-medium"
                 />
               </div>
               <button
@@ -123,46 +123,6 @@ export function QuickLog() {
           )}
         </div>
 
-        {/* Toggle grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Sauna toggle */}
-          <button
-            onClick={() => updateLog({ sauna: !dailyLog?.sauna })}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all min-h-[44px] ${
-              dailyLog?.sauna
-                ? 'bg-orange-500/10 border-orange-500/30 shadow-sm shadow-orange-500/10'
-                : 'bg-bg/40 border-border/40 hover:border-border'
-            }`}
-          >
-            <span className="text-2xl">
-              {dailyLog?.sauna ? '\u2668\uFE0F' : '\u2668\uFE0F'}
-            </span>
-            <span className={`text-xs font-bold uppercase tracking-wider ${
-              dailyLog?.sauna ? 'text-orange-400' : 'text-muted'
-            }`}>
-              Sauna
-            </span>
-          </button>
-
-          {/* Cold Plunge toggle */}
-          <button
-            onClick={() => updateLog({ coldPlunge: !dailyLog?.coldPlunge })}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all min-h-[44px] ${
-              dailyLog?.coldPlunge
-                ? 'bg-cyan-500/10 border-cyan-500/30 shadow-sm shadow-cyan-500/10'
-                : 'bg-bg/40 border-border/40 hover:border-border'
-            }`}
-          >
-            <span className="text-2xl">
-              {dailyLog?.coldPlunge ? '\u2744\uFE0F' : '\u2744\uFE0F'}
-            </span>
-            <span className={`text-xs font-bold uppercase tracking-wider ${
-              dailyLog?.coldPlunge ? 'text-cyan-400' : 'text-muted'
-            }`}>
-              Cold Plunge
-            </span>
-          </button>
-        </div>
       </div>
     </div>
   );

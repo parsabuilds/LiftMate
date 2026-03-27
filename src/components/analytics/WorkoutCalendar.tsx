@@ -23,12 +23,18 @@ function getMondayOfWeek(date: Date): Date {
 }
 
 export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
-  const [tooltip, setTooltip] = useState<{ date: string; dayType: string } | null>(null);
+  const [tooltip, setTooltip] = useState<{ date: string; dayTypes: string[] } | null>(null);
 
   const calendarData = useMemo(() => {
-    const workoutMap = new Map<string, string>();
+    const workoutMap = new Map<string, string[]>();
     workoutLogs.forEach((log) => {
-      workoutMap.set(log.date, log.dayType.toLowerCase());
+      const dt = log.dayType.toLowerCase();
+      const existing = workoutMap.get(log.date);
+      if (existing) {
+        if (!existing.includes(dt)) existing.push(dt);
+      } else {
+        workoutMap.set(log.date, [dt]);
+      }
     });
 
     const today = new Date();
@@ -36,9 +42,9 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
     const startDate = new Date(currentMonday);
     startDate.setDate(startDate.getDate() - 11 * 7); // 12 weeks back
 
-    const weeks: { date: string; dayType: string | null }[][] = [];
+    const weeks: { date: string; dayTypes: string[] }[][] = [];
     for (let w = 0; w < 12; w++) {
-      const week: { date: string; dayType: string | null }[] = [];
+      const week: { date: string; dayTypes: string[] }[] = [];
       for (let d = 0; d < 7; d++) {
         const cellDate = new Date(startDate);
         cellDate.setDate(cellDate.getDate() + w * 7 + d);
@@ -46,7 +52,7 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
         const isFuture = cellDate > today;
         week.push({
           date: dateStr,
-          dayType: isFuture ? null : (workoutMap.get(dateStr) || null),
+          dayTypes: isFuture ? [] : (workoutMap.get(dateStr) || []),
         });
       }
       weeks.push(week);
@@ -64,22 +70,27 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
-        {calendarData.flat().map((cell) => {
-          const colorClass = cell.dayType ? (DAY_COLORS[cell.dayType] || 'bg-muted') : 'bg-white/[0.04]';
-          return (
-            <button
-              key={cell.date}
-              onClick={() => setTooltip(tooltip?.date === cell.date ? null : { date: cell.date, dayType: cell.dayType || 'rest' })}
-              className={`aspect-square rounded-md ${colorClass} transition-all hover:opacity-80 hover:scale-110`}
-              aria-label={`${cell.date}: ${cell.dayType || 'rest'}`}
-            />
-          );
-        })}
+        {calendarData.flat().map((cell) => (
+          <button
+            key={cell.date}
+            onClick={() => setTooltip(tooltip?.date === cell.date ? null : { date: cell.date, dayTypes: cell.dayTypes.length ? cell.dayTypes : ['rest'] })}
+            className="aspect-square rounded-md overflow-hidden flex transition-all hover:opacity-80 hover:scale-110"
+            aria-label={`${cell.date}: ${cell.dayTypes.length ? cell.dayTypes.join(', ') : 'rest'}`}
+          >
+            {cell.dayTypes.length === 0 ? (
+              <div className="w-full h-full bg-white/[0.04]" />
+            ) : (
+              cell.dayTypes.map((dt, i) => (
+                <div key={i} className={`flex-1 h-full ${DAY_COLORS[dt] || 'bg-muted'}`} />
+              ))
+            )}
+          </button>
+        ))}
       </div>
 
       {tooltip && (
         <div className="mt-3 text-center text-sm text-muted bg-card/60 border border-white/[0.06] rounded-xl py-2 px-3">
-          {tooltip.date} — <span className="text-text font-bold capitalize">{tooltip.dayType}</span>
+          {tooltip.date} — <span className="text-text font-bold capitalize">{tooltip.dayTypes.join(', ')}</span>
         </div>
       )}
 

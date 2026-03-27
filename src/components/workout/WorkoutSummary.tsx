@@ -8,6 +8,9 @@ interface WorkoutSummaryProps {
   exercises: ExerciseLog[];
   prs: Array<{ exerciseName: string; weight: number; reps: number }>;
   onSave: (energyRating: number) => void;
+  onBack: () => void;
+  saving?: boolean;
+  saveError?: string | null;
 }
 
 function formatTime(seconds: number): string {
@@ -23,7 +26,7 @@ const statMeta = [
   { label: 'Total Volume', color: '#F59E0B' },
 ];
 
-export function WorkoutSummary({ duration, exercises, prs, onSave }: WorkoutSummaryProps) {
+export function WorkoutSummary({ duration, exercises, prs, onSave, onBack, saving, saveError }: WorkoutSummaryProps) {
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
@@ -47,6 +50,14 @@ export function WorkoutSummary({ duration, exercises, prs, onSave }: WorkoutSumm
 
   return (
     <div className="space-y-4">
+      {/* Back button */}
+      <button onClick={onBack} className="text-primary text-sm font-semibold hover:underline flex items-center gap-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 19l-7-7 7-7" />
+        </svg>
+        Go Back & Edit
+      </button>
+
       <div className="grid grid-cols-2 gap-3">
         {statMeta.map((meta, i) => (
           <div
@@ -92,8 +103,14 @@ export function WorkoutSummary({ duration, exercises, prs, onSave }: WorkoutSumm
         </div>
       </div>
 
-      <Button fullWidth onClick={() => onSave(rating)} disabled={rating === 0}>
-        Save Workout
+      {saveError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">
+          {saveError}
+        </div>
+      )}
+
+      <Button fullWidth onClick={() => onSave(rating)} disabled={rating === 0 || saving}>
+        {saving ? 'Saving...' : 'Save Workout'}
       </Button>
     </div>
   );

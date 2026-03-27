@@ -32,6 +32,16 @@
     <title>LiftMate — Track Lifts. Break Records. Get Stronger.</title>
   </head>
   <body>
+    <!-- Landscape orientation lock overlay (CSS-only, shown on mobile landscape) -->
+    <div id="landscape-overlay">
+      <div class="landscape-overlay-content">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="12" y1="18" x2="12" y2="18.01"/>
+        </svg>
+        <p>Please rotate your device to portrait mode</p>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

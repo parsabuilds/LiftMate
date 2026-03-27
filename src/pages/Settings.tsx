@@ -35,6 +35,7 @@ export function Settings() {
   const { data: checklistItems } = useCollection<ChecklistItem>(
     user ? `users/${user.uid}/checklist` : null
   );
+  const [showChecklist, setShowChecklist] = useState(false);
   const [showAddChecklist, setShowAddChecklist] = useState(false);
   const [newChecklistEmoji, setNewChecklistEmoji] = useState('');
   const [newChecklistLabel, setNewChecklistLabel] = useState('');
@@ -271,62 +272,80 @@ export function Settings() {
 
         {/* Checklist */}
         <div className={sectionCard}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 11l3 3L22 4" />
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-              </svg>
+          <button
+            onClick={() => setShowChecklist(!showChecklist)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <p className="text-text font-bold">Daily Checklist</p>
+                <p className="text-muted text-xs">{checklistItems.length} item{checklistItems.length !== 1 ? 's' : ''}</p>
+              </div>
             </div>
-            <h3 className="text-text font-bold text-base">Daily Checklist</h3>
-          </div>
+            <svg
+              width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className={`transition-transform ${showChecklist ? 'rotate-90' : ''}`}
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
 
-          {checklistItems.length > 0 ? (
-            <div className="space-y-1 mb-3">
-              {checklistItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
-                  <span className="text-text text-sm">{item.emoji} {item.label}</span>
-                  <button
-                    onClick={() => handleDeleteChecklistItem(item.id)}
-                    className="text-red-400 text-xs min-h-[44px] px-2 font-medium"
-                  >
-                    Remove
-                  </button>
+          {showChecklist && (
+            <div className="mt-4">
+              {checklistItems.length > 0 ? (
+                <div className="space-y-1 mb-3">
+                  {checklistItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+                      <span className="text-text text-sm">{item.emoji} {item.label}</span>
+                      <button
+                        onClick={() => handleDeleteChecklistItem(item.id)}
+                        className="text-red-400 text-xs min-h-[44px] px-2 font-medium"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted text-sm mb-3">No checklist items yet.</p>
-          )}
+              ) : (
+                <p className="text-muted text-sm mb-3">No checklist items yet.</p>
+              )}
 
-          {showAddChecklist ? (
-            <div className="space-y-2 border-t border-white/[0.04] pt-3">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Emoji"
-                  value={newChecklistEmoji}
-                  onChange={e => setNewChecklistEmoji(e.target.value)}
-                  className="w-16 text-center"
-                  maxLength={4}
-                />
-                <Input
-                  placeholder="Label"
-                  value={newChecklistLabel}
-                  onChange={e => setNewChecklistLabel(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()}
-                  className="flex-1"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="ghost" fullWidth onClick={() => setShowAddChecklist(false)}>Cancel</Button>
-                <Button size="sm" fullWidth onClick={handleAddChecklistItem} disabled={!newChecklistLabel.trim()}>Add</Button>
-              </div>
+              {showAddChecklist ? (
+                <div className="space-y-2 border-t border-white/[0.04] pt-3">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Emoji"
+                      value={newChecklistEmoji}
+                      onChange={e => setNewChecklistEmoji(e.target.value)}
+                      className="w-16 text-center"
+                      maxLength={4}
+                    />
+                    <Input
+                      placeholder="Label"
+                      value={newChecklistLabel}
+                      onChange={e => setNewChecklistLabel(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()}
+                      className="flex-1"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" fullWidth onClick={() => setShowAddChecklist(false)}>Cancel</Button>
+                    <Button size="sm" fullWidth onClick={handleAddChecklistItem} disabled={!newChecklistLabel.trim()}>Add</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="secondary" fullWidth size="sm" onClick={() => setShowAddChecklist(true)}>
+                  + Add Item
+                </Button>
+              )}
             </div>
-          ) : (
-            <Button variant="secondary" fullWidth size="sm" onClick={() => setShowAddChecklist(true)}>
-              + Add Item
-            </Button>
           )}
         </div>
 
@@ -346,6 +365,9 @@ export function Settings() {
             <span className="text-muted">Version</span>
             <span className="text-text font-medium">1.0.0</span>
           </div>
+          <p className="text-muted text-xs mt-3 leading-relaxed">
+            Got feedback? No email, no form, no QR code. Find me at the gym, wait until I'm mid-set, and say it to my face. If I'm wearing headphones, that means I'm extra open to suggestions.
+          </p>
         </div>
 
         {/* Sign Out / Delete */}

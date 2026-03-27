@@ -5,168 +5,71 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { setDocument } from '../hooks/useFirestore';
-import type { RoutineDay, MuscleGroup, Exercise } from '../types';
+import { MUSCLE_GROUPS, GENERIC_WARMUPS, getExercisesForMuscleGroups, generateDayName } from '../data/exerciseCatalog';
+import type { RoutineDay, MuscleGroup } from '../types';
 
-type Step = 'name' | 'days' | 'muscles' | 'review';
+type Step = 'name' | 'build' | 'review';
 
-interface DayDraft {
-  dayType: string;
-  muscleGroups: MuscleGroupDraft[];
-}
-
-interface MuscleGroupDraft {
-  name: string;
-  exercises: ExerciseDraft[];
-}
-
-interface ExerciseDraft {
-  name: string;
-  sets: number;
-  reps: string;
-}
+const DAY_COUNT_OPTIONS = [2, 3, 4, 5, 6] as const;
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
-
-const STEPS: Step[] = ['name', 'days', 'muscles', 'review'];
-const STEP_LABELS: Record<Step, string> = {
-  name: 'Name',
-  days: 'Day Types',
-  muscles: 'Exercises',
-  review: 'Review',
-};
 
 export function RoutineBuilder() {
   const navigate = useNavigate();
   const { user, profile } = useAuthContext();
   const [step, setStep] = useState<Step>('name');
   const [routineName, setRoutineName] = useState('');
-  const [days, setDays] = useState<DayDraft[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Day editing
-  const [editingDayIdx, setEditingDayIdx] = useState<number | null>(null);
-  const [dayTypeName, setDayTypeName] = useState('');
+  // Custom builder state (same as onboarding)
+  const [dayCount, setDayCount] = useState(3);
+  const [dayMuscles, setDayMuscles] = useState<string[][]>(() => Array.from({ length: 6 }, () => []));
 
-  // Muscle group editing for a specific day
-  const [editingMuscleDay, setEditingMuscleDay] = useState(0);
-  const [newMuscleGroupName, setNewMuscleGroupName] = useState('');
-  const [newExercise, setNewExercise] = useState<Record<string, { name: string; sets: string; reps: string }>>({});
+  function toggleMuscle(dayIndex: number, muscle: string) {
+    setDayMuscles((prev) => {
+      const updated = [...prev];
+      const current = updated[dayIndex];
+      if (current.includes(muscle)) {
+        updated[dayIndex] = current.filter((m) => m !== muscle);
+      } else {
+        updated[dayIndex] = [...current, muscle];
+      }
+      return updated;
+    });
+  }
 
-  const stepIndex = STEPS.indexOf(step);
+  function buildRoutineDays(): RoutineDay[] {
+    const days: RoutineDay[] = [];
+    for (let i = 0; i < dayCount; i++) {
+      const muscles = dayMuscles[i] || [];
+      const muscleGroups: MuscleGroup[] = getExercisesForMuscleGroups(muscles).map((mg) => ({
+        name: mg.name,
+        exercises: mg.exercises,
+      }));
+      days.push({
+        dayType: generateDayName(muscles),
+        warmups: GENERIC_WARMUPS,
+        muscleGroups,
+      });
+    }
+    return days;
+  }
 
   const goBack = () => {
-    if (stepIndex > 0) {
-      setStep(STEPS[stepIndex - 1]);
-    } else {
-      navigate('/settings');
-    }
+    if (step === 'build') setStep('name');
+    else if (step === 'review') setStep('build');
+    else navigate('/settings');
   };
 
-  const goNext = () => {
-    if (stepIndex < STEPS.length - 1) {
-      setStep(STEPS[stepIndex + 1]);
-    }
-  };
-
-  const addDay = () => {
-    if (!dayTypeName.trim()) return;
-    if (editingDayIdx !== null) {
-      setDays(prev => prev.map((d, i) => i === editingDayIdx ? { ...d, dayType: dayTypeName.trim() } : d));
-      setEditingDayIdx(null);
-    } else {
-      setDays(prev => [...prev, { dayType: dayTypeName.trim(), muscleGroups: [] }]);
-    }
-    setDayTypeName('');
-  };
-
-  const editDay = (idx: number) => {
-    setEditingDayIdx(idx);
-    setDayTypeName(days[idx].dayType);
-  };
-
-  const removeDay = (idx: number) => {
-    setDays(prev => prev.filter((_, i) => i !== idx));
-    if (editingDayIdx === idx) {
-      setEditingDayIdx(null);
-      setDayTypeName('');
-    }
-  };
-
-  const addMuscleGroup = (dayIdx: number) => {
-    if (!newMuscleGroupName.trim()) return;
-    setDays(prev => prev.map((d, i) =>
-      i === dayIdx
-        ? { ...d, muscleGroups: [...d.muscleGroups, { name: newMuscleGroupName.trim(), exercises: [] }] }
-        : d
-    ));
-    setNewMuscleGroupName('');
-  };
-
-  const removeMuscleGroup = (dayIdx: number, mgIdx: number) => {
-    setDays(prev => prev.map((d, i) =>
-      i === dayIdx
-        ? { ...d, muscleGroups: d.muscleGroups.filter((_, j) => j !== mgIdx) }
-        : d
-    ));
-  };
-
-  const getExKey = (dayIdx: number, mgIdx: number) => `${dayIdx}-${mgIdx}`;
-
-  const addExercise = (dayIdx: number, mgIdx: number) => {
-    const key = getExKey(dayIdx, mgIdx);
-    const ex = newExercise[key];
-    if (!ex || !ex.name.trim()) return;
-    const sets = parseInt(ex.sets) || 3;
-    const reps = ex.reps.trim() || '8-12';
-    setDays(prev => prev.map((d, i) =>
-      i === dayIdx
-        ? {
-            ...d,
-            muscleGroups: d.muscleGroups.map((mg, j) =>
-              j === mgIdx
-                ? { ...mg, exercises: [...mg.exercises, { name: ex.name.trim(), sets, reps }] }
-                : mg
-            ),
-          }
-        : d
-    ));
-    setNewExercise(prev => ({ ...prev, [key]: { name: '', sets: '3', reps: '8-12' } }));
-  };
-
-  const removeExercise = (dayIdx: number, mgIdx: number, exIdx: number) => {
-    setDays(prev => prev.map((d, i) =>
-      i === dayIdx
-        ? {
-            ...d,
-            muscleGroups: d.muscleGroups.map((mg, j) =>
-              j === mgIdx
-                ? { ...mg, exercises: mg.exercises.filter((_, k) => k !== exIdx) }
-                : mg
-            ),
-          }
-        : d
-    ));
-  };
+  const hasAtLeastOneMuscle = dayMuscles.slice(0, dayCount).every((d) => d.length > 0);
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     const routineId = genId();
-    const routineDays: RoutineDay[] = days.map(d => ({
-      dayType: d.dayType,
-      warmups: [],
-      muscleGroups: d.muscleGroups.map((mg): MuscleGroup => ({
-        name: mg.name,
-        exercises: mg.exercises.map((ex): Exercise => ({
-          id: genId(),
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-        })),
-      })),
-    }));
+    const routineDays = buildRoutineDays();
 
     await setDocument(`users/${user.uid}/routines/${routineId}`, {
       id: routineId,
@@ -178,9 +81,13 @@ export function RoutineBuilder() {
     navigate('/settings');
   };
 
-  const canProceedFromName = routineName.trim().length > 0;
-  const canProceedFromDays = days.length > 0;
-  const canProceedFromMuscles = days.every(d => d.muscleGroups.length > 0 && d.muscleGroups.every(mg => mg.exercises.length > 0));
+  const STEPS: Step[] = ['name', 'build', 'review'];
+  const STEP_LABELS: Record<Step, string> = {
+    name: 'Name',
+    build: 'Build',
+    review: 'Review',
+  };
+  const stepIndex = STEPS.indexOf(step);
 
   return (
     <Layout>
@@ -223,170 +130,75 @@ export function RoutineBuilder() {
                 autoFocus
               />
             </div>
-            <Button fullWidth onClick={goNext} disabled={!canProceedFromName}>
+            <Button fullWidth onClick={() => setStep('build')} disabled={!routineName.trim()}>
               Continue
             </Button>
           </div>
         )}
 
-        {/* Step: Day Types */}
-        {step === 'days' && (
-          <div className="space-y-4">
-            {days.map((d, i) => (
-              <div key={i} className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-text font-bold">{d.dayType}</p>
-                    <p className="text-muted text-sm">{d.muscleGroups.length} muscle group{d.muscleGroups.length !== 1 ? 's' : ''}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => editDay(i)} className="text-primary text-sm font-semibold min-h-[44px] px-2">Edit</button>
-                    <button onClick={() => removeDay(i)} className="text-red-400 text-sm font-semibold min-h-[44px] px-2">Delete</button>
-                  </div>
+        {/* Step: Build (matches onboarding custom builder) */}
+        {step === 'build' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-black text-text tracking-tight">Build Your Routine</h2>
+              <p className="text-muted text-sm">Pick how many days and what muscles to hit each day.</p>
+            </div>
+
+            {/* Day count */}
+            <div>
+              <p className="text-text font-bold text-sm mb-2">Training Days Per Week</p>
+              <div className="flex gap-2">
+                {DAY_COUNT_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setDayCount(n)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      dayCount === n
+                        ? 'bg-primary text-white'
+                        : 'bg-card/60 border border-white/[0.06] text-muted hover:border-white/10'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Per-day muscle groups */}
+            {Array.from({ length: dayCount }, (_, dayIdx) => (
+              <div key={dayIdx}>
+                <p className="text-text font-bold text-sm mb-2">
+                  Day {dayIdx + 1}
+                  {dayMuscles[dayIdx].length > 0 && (
+                    <span className="text-muted font-normal"> — {generateDayName(dayMuscles[dayIdx])}</span>
+                  )}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {MUSCLE_GROUPS.map((mg) => {
+                    const selected = dayMuscles[dayIdx].includes(mg.name);
+                    return (
+                      <button
+                        key={mg.name}
+                        onClick={() => toggleMuscle(dayIdx, mg.name)}
+                        className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                          selected
+                            ? 'bg-primary/20 border border-primary text-primary'
+                            : 'bg-card/60 border border-white/[0.06] text-muted hover:border-white/10'
+                        }`}
+                      >
+                        {mg.emoji} {mg.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
 
-            <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">{editingDayIdx !== null ? 'Edit Day Type' : 'Add Day Type'}</p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder='e.g., "Push", "Upper Body"'
-                  value={dayTypeName}
-                  onChange={e => setDayTypeName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addDay()}
-                  className="flex-1"
-                />
-                <Button onClick={addDay} disabled={!dayTypeName.trim()}>
-                  {editingDayIdx !== null ? 'Save' : 'Add'}
-                </Button>
-              </div>
-            </div>
-
             <div className="flex gap-3">
               <Button variant="secondary" fullWidth onClick={goBack}>
                 Back
               </Button>
-              <Button fullWidth onClick={goNext} disabled={!canProceedFromDays}>
-                Continue
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step: Muscle Groups & Exercises */}
-        {step === 'muscles' && (
-          <div className="space-y-4">
-            {/* Day tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {days.map((d, i) => (
-                <button
-                  key={i}
-                  onClick={() => setEditingMuscleDay(i)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap min-h-[44px] transition-all ${
-                    editingMuscleDay === i
-                      ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                      : 'bg-card/60 text-muted border border-white/[0.06] hover:border-white/10'
-                  }`}
-                >
-                  {d.dayType}
-                </button>
-              ))}
-            </div>
-
-            {days[editingMuscleDay] && (
-              <>
-                {/* Existing muscle groups */}
-                {days[editingMuscleDay].muscleGroups.map((mg, mgIdx) => (
-                  <div key={mgIdx} className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-text font-bold text-lg">{mg.name}</h4>
-                      <button onClick={() => removeMuscleGroup(editingMuscleDay, mgIdx)} className="text-red-400 text-sm font-semibold min-h-[44px] px-2">Remove</button>
-                    </div>
-
-                    {/* Exercises */}
-                    {mg.exercises.map((ex, exIdx) => (
-                      <div key={exIdx} className="flex items-center justify-between py-2 border-b border-white/[0.06] last:border-0">
-                        <span className="text-text text-sm font-medium">{ex.name} <span className="text-muted">({ex.sets}x{ex.reps})</span></span>
-                        <button onClick={() => removeExercise(editingMuscleDay, mgIdx, exIdx)} className="text-red-400 text-xs font-bold min-h-[44px] px-2">X</button>
-                      </div>
-                    ))}
-
-                    {/* Add exercise form */}
-                    <div className="mt-3 space-y-2">
-                      <Input
-                        placeholder="Exercise name"
-                        value={newExercise[getExKey(editingMuscleDay, mgIdx)]?.name ?? ''}
-                        onChange={e => setNewExercise(prev => ({
-                          ...prev,
-                          [getExKey(editingMuscleDay, mgIdx)]: {
-                            ...prev[getExKey(editingMuscleDay, mgIdx)] ?? { name: '', sets: '3', reps: '8-12' },
-                            name: e.target.value,
-                          },
-                        }))}
-                      />
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Sets"
-                          type="number"
-                          value={newExercise[getExKey(editingMuscleDay, mgIdx)]?.sets ?? '3'}
-                          onChange={e => setNewExercise(prev => ({
-                            ...prev,
-                            [getExKey(editingMuscleDay, mgIdx)]: {
-                              ...prev[getExKey(editingMuscleDay, mgIdx)] ?? { name: '', sets: '3', reps: '8-12' },
-                              sets: e.target.value,
-                            },
-                          }))}
-                          className="w-20"
-                        />
-                        <Input
-                          placeholder="Reps"
-                          value={newExercise[getExKey(editingMuscleDay, mgIdx)]?.reps ?? '8-12'}
-                          onChange={e => setNewExercise(prev => ({
-                            ...prev,
-                            [getExKey(editingMuscleDay, mgIdx)]: {
-                              ...prev[getExKey(editingMuscleDay, mgIdx)] ?? { name: '', sets: '3', reps: '8-12' },
-                              reps: e.target.value,
-                            },
-                          }))}
-                          className="flex-1"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={() => addExercise(editingMuscleDay, mgIdx)}
-                          disabled={!newExercise[getExKey(editingMuscleDay, mgIdx)]?.name?.trim()}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Add muscle group */}
-                <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">Add Muscle Group</p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder='e.g., "Chest", "Biceps"'
-                      value={newMuscleGroupName}
-                      onChange={e => setNewMuscleGroupName(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addMuscleGroup(editingMuscleDay)}
-                      className="flex-1"
-                    />
-                    <Button onClick={() => addMuscleGroup(editingMuscleDay)} disabled={!newMuscleGroupName.trim()}>
-                      Add
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="flex gap-3">
-              <Button variant="secondary" fullWidth onClick={goBack}>
-                Back
-              </Button>
-              <Button fullWidth onClick={goNext} disabled={!canProceedFromMuscles}>
+              <Button fullWidth disabled={!hasAtLeastOneMuscle} onClick={() => setStep('review')}>
                 Review
               </Button>
             </div>
@@ -398,10 +210,10 @@ export function RoutineBuilder() {
           <div className="space-y-4">
             <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
               <h3 className="text-text font-black text-xl mb-4 tracking-tight">{routineName}</h3>
-              {days.map((d, i) => (
+              {buildRoutineDays().map((day, i) => (
                 <div key={i} className="mb-4 last:mb-0">
-                  <p className="text-primary font-bold mb-1.5">{d.dayType}</p>
-                  {d.muscleGroups.map((mg, j) => (
+                  <p className="text-primary font-bold mb-1.5">Day {i + 1}: {day.dayType}</p>
+                  {day.muscleGroups.map((mg, j) => (
                     <div key={j} className="ml-3 mb-2">
                       <p className="text-text text-sm font-semibold">{mg.name}</p>
                       {mg.exercises.map((ex, k) => (

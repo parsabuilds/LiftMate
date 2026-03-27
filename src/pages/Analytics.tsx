@@ -6,6 +6,7 @@ import { StatsSummary } from '../components/analytics/StatsSummary';
 import { ExerciseChart } from '../components/analytics/ExerciseChart';
 import { BodyWeightChart } from '../components/analytics/BodyWeightChart';
 import { WorkoutCalendar } from '../components/analytics/WorkoutCalendar';
+import { ThisWeekChart } from '../components/analytics/ThisWeekChart';
 import { EventsList } from '../components/analytics/EventsList';
 import { AddEventForm } from '../components/analytics/AddEventForm';
 import type { WorkoutLog, DailyLog, TimelineEvent } from '../types';
@@ -87,6 +88,8 @@ export function Analytics() {
         ) : (
           <div className="space-y-4">
             <StatsSummary workoutLogs={workoutLogs} profile={profile} />
+
+            <ThisWeekChart workoutLogs={workoutLogs} />
 
             <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
               <div className="flex items-center gap-2.5 mb-4">
