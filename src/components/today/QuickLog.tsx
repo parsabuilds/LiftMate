@@ -102,6 +102,8 @@ export function QuickLog() {
                 </div>
                 <input
                   type="number"
+                  inputMode="decimal"
+                  step="0.1"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWeight(); }}

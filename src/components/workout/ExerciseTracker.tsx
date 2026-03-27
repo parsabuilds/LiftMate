@@ -57,11 +57,22 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     ? `Last time: ${prevLog.sets.length}x${prevLog.sets[0]?.reps ?? '?'} @ ${prevLog.sets[0]?.weight ?? '?'} lbs`
     : null;
 
-  const updateSet = (index: number, field: 'reps' | 'weight', value: number) => {
-    setSets(
-      sets.map((s, i) => (i === index ? { ...s, [field]: value } : s))
-    );
-  };
+    const [weights, setWeights] = useState<Record<number, string>>({});
+
+    const updateSetWeight = (index: number, value: string) => {
+      setWeights(prev => ({ ...prev, [index]: value }));
+      const numValue = parseFloat(value) || 0;
+      setSets(
+        sets.map((s, i) => (i === index ? { ...s, weight: numValue } : s))
+      );
+    };
+
+    const updateSetReps = (index: number, value: string) => {
+      const numValue = parseInt(value) || 0;
+      setSets(
+        sets.map((s, i) => (i === index ? { ...s, reps: numValue } : s))
+      );
+    };
 
   const confirmSet = (index: number) => {
     setSets(
@@ -99,6 +110,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
     const exerciseLog = buildLogForCurrentExercise();
     const updatedLogs = [...inProgressLogs, exerciseLog];
 
+    setWeights({}); // Clear temporary string weights
     if (currentExerciseIndex >= exercises.length - 1) {
       // Don't reset state here — preserve it so back-navigation from cardioAbs works.
       // State is only cleared when the workout is saved via clearWorkout().
@@ -112,6 +124,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
   }, [buildLogForCurrentExercise, inProgressLogs, currentExerciseIndex, exercises, onComplete, setCurrentExerciseIndex, setInProgressLogs, setSets]);
 
   const goToPrev = useCallback(() => {
+    setWeights({}); // Clear temporary string weights
     if (currentExerciseIndex === 0) {
       onBack();
       return;
@@ -220,16 +233,16 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack }:
               type="number"
               inputMode="numeric"
               value={set.reps || ''}
-              onChange={(e) => updateSet(i, 'reps', parseInt(e.target.value) || 0)}
+              onChange={(e) => updateSetReps(i, e.target.value)}
               disabled={set.completed}
               className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder={exercise.reps}
             />
             <input
-              type="number"
-              inputMode="numeric"
-              value={set.weight || ''}
-              onChange={(e) => updateSet(i, 'weight', parseInt(e.target.value) || 0)}
+              type="text"
+              inputMode="decimal"
+              value={weights[i] ?? (set.weight || '')}
+              onChange={(e) => updateSetWeight(i, e.target.value)}
               disabled={set.completed}
               className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-sm w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
               placeholder="lbs"
