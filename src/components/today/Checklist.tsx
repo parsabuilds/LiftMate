@@ -1,10 +1,21 @@
+import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useDocument, useCollection, setDocument } from '../../hooks/useFirestore';
+import { getLocalDateString } from '../../utils/date';
 import type { ChecklistItem, DailyLog } from '../../types';
 
 export function Checklist() {
   const { user } = useAuthContext();
-  const today = new Date().toISOString().split('T')[0];
+  const [today, setToday] = useState(() => getLocalDateString());
+
+  // Re-render at midnight so checklist resets on the local date change
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newDate = getLocalDateString();
+      if (newDate !== today) setToday(newDate);
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [today]);
 
   const { data: items } = useCollection<ChecklistItem>(
     user ? `users/${user.uid}/checklist` : null
