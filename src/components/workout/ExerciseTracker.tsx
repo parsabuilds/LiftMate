@@ -85,14 +85,11 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
     ? `Last time: ${prevLog.sets.length}x${prevLog.sets[0]?.reps ?? '?'} @ ${prevLog.sets[0]?.weight ?? '?'} lbs`
     : null;
 
-  const [weights, setWeights] = useState<Record<number, string>>({});
-
-  const updateSetWeight = (index: number, value: string) => {
-    setWeights(prev => ({ ...prev, [index]: value }));
-    const numValue = parseFloat(value) || 0;
-    setSets(
-      sets.map((s, i) => (i === index ? { ...s, weight: numValue } : s))
-    );
+  const handleWeightChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    if (!isNaN(val)) {
+      setSets(sets.map((s, i) => (i === index ? { ...s, weight: val } : s)));
+    }
   };
 
   const updateSetReps = (index: number, value: string) => {
@@ -171,7 +168,6 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
   }), [exercise, sets]);
 
   const restoreSetsFromLog = useCallback((log: ExerciseLog | undefined, targetExercise: Exercise) => {
-    setWeights({}); // Clear temporary string weights when restoring
     if (log && log.sets.length > 0) {
       setSets(log.sets.map((s): SetRow => ({
         setNumber: s.setNumber,
@@ -452,10 +448,12 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
                 placeholder={exercise.reps}
               />
               <input
-                type="text"
+                key={`${exercise.id}-weight-${i}`}
+                type="number"
                 inputMode="decimal"
-                value={weights[i] ?? (set.weight || '')}
-                onChange={(e) => updateSetWeight(i, e.target.value)}
+                step="any"
+                defaultValue={set.weight || ''}
+                onChange={(e) => handleWeightChange(i, e)}
                 disabled={set.completed}
                 className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
                 placeholder="lbs"
