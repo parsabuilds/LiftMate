@@ -71,6 +71,7 @@ export const mensRoutine: Routine = {
           exercises: [
             { id: 'pull-fore-1', name: 'Wrist Curls', sets: 3, reps: '15-20', youtubeId: 'SqwIBiru46w' },
             { id: 'pull-fore-2', name: 'Reverse Wrist Curls', sets: 3, reps: '15-20', youtubeId: 'SfENsl5klVA' },
+            { id: 'pull-fore-3', name: 'Reverse Curls', sets: 3, reps: '12-15', youtubeId: 'pXx38ZWRYjo' },
           ],
         },
       ],
