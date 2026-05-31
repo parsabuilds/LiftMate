@@ -1,4 +1,5 @@
 import type { WorkoutLog } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 interface ThisWeekChartProps {
   workoutLogs: WorkoutLog[];
@@ -17,12 +18,12 @@ function getWeekDates(): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return d.toISOString().split('T')[0];
+    return getLocalDateString(d);
   });
 }
 
 function getToday(): string {
-  return new Date().toISOString().split('T')[0];
+  return getLocalDateString();
 }
 
 export function ThisWeekChart({ workoutLogs }: ThisWeekChartProps) {

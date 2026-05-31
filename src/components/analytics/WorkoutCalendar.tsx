@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { WorkoutLog } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 interface WorkoutCalendarProps {
   workoutLogs: WorkoutLog[];
@@ -48,7 +49,7 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
       for (let d = 0; d < 7; d++) {
         const cellDate = new Date(startDate);
         cellDate.setDate(cellDate.getDate() + w * 7 + d);
-        const dateStr = cellDate.toISOString().slice(0, 10);
+        const dateStr = getLocalDateString(cellDate);
         const isFuture = cellDate > today;
         week.push({
           date: dateStr,

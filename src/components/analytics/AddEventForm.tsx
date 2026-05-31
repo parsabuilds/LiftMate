@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import type { TimelineEvent } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 interface AddEventFormProps {
   isOpen: boolean;

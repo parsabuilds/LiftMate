@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { DailyLog, TimelineEvent } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 interface BodyWeightChartProps {
   dailyLogs: DailyLog[];
@@ -14,7 +15,7 @@ function getDateThreshold(range: TimeRange): string | null {
   const now = new Date();
   const months = range === '1M' ? 1 : range === '3M' ? 3 : 6;
   now.setMonth(now.getMonth() - months);
-  return now.toISOString().slice(0, 10);
+  return getLocalDateString(now);
 }
 
 export function BodyWeightChart({ dailyLogs, events }: BodyWeightChartProps) {

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { WorkoutLog, UserProfile } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 interface StatsSummaryProps {
   workoutLogs: WorkoutLog[];
@@ -18,11 +19,11 @@ export function StatsSummary({ workoutLogs, profile }: StatsSummaryProps) {
     const now = new Date();
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekStr = weekAgo.toISOString().slice(0, 10);
+    const weekStr = getLocalDateString(weekAgo);
 
     const monthAgo = new Date(now);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
-    const monthStr = monthAgo.toISOString().slice(0, 10);
+    const monthStr = getLocalDateString(monthAgo);
 
     const weeklyVolume = workoutLogs
       .filter((log) => log.date >= weekStr)

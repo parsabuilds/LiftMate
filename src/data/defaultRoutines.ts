@@ -52,7 +52,7 @@ export const mensRoutine: Routine = {
             { id: 'pull-back-3', name: 'Seated Cable Rows', sets: 3, reps: '10-12', youtubeId: 'GZbfZ033f74' },
             { id: 'pull-back-4', name: 'Lat Pulldowns', sets: 3, reps: '10-12', youtubeId: 'CAwf7n6Luuc' },
             { id: 'pull-back-5', name: 'Face Pulls', sets: 3, reps: '15-20', youtubeId: 'rep-qVOkqgk' },
-            { id: 'pull-back-7', name: 'Wide-Grip Pull-Ups', sets: 3, reps: '8-12', youtubeId: 'IK3sH7wOAWE' },
+            { id: 'pull-back-7', name: 'Close-Grip Pull-Ups', sets: 3, reps: '8-12', youtubeId: 'MezHBYXLd80' },
           ],
         },
         {

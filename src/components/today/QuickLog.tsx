@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useDocument, setDocument } from '../../hooks/useFirestore';
 import type { DailyLog } from '../../types';
+import { getLocalDateString } from '../../utils/date';
 
 export function QuickLog() {
   const { user } = useAuthContext();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   const { data: dailyLog } = useDocument<DailyLog>(
     user ? `users/${user.uid}/dailyLogs/${today}` : null
