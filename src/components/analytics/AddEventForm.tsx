@@ -43,7 +43,7 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
       setLabel(editingEvent.label);
       setNotes(editingEvent.notes || '');
     } else {
-      setDate(new Date().toISOString().slice(0, 10));
+      setDate(getLocalDateString());
       setType('milestone');
       setLabel('');
       setNotes('');
