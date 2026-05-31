@@ -4,6 +4,9 @@ import { getLocalDateString } from '../../utils/date';
 
 interface WorkoutCalendarProps {
   workoutLogs: WorkoutLog[];
+  manualDates: Set<string>;
+  onLogWorkout: (date: string) => void | Promise<void>;
+  onRemoveManual: (date: string) => void | Promise<void>;
 }
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -25,7 +28,12 @@ function formatLong(dateStr: string): string {
   });
 }
 
-export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
+export function WorkoutCalendar({
+  workoutLogs,
+  manualDates,
+  onLogWorkout,
+  onRemoveManual,
+}: WorkoutCalendarProps) {
   const [selected, setSelected] = useState<string | null>(null);
 
   const workoutMap = useMemo(() => {
@@ -71,7 +79,7 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
       <div className="grid grid-cols-7 gap-1.5">
         {cells.map((cell) => {
           const logs = workoutMap.get(cell.dateStr);
-          const didWorkout = !!logs && logs.length > 0;
+          const didWorkout = (!!logs && logs.length > 0) || manualDates.has(cell.dateStr);
           const isToday = cell.dateStr === todayStr;
           const isFuture = cell.dateStr > todayStr;
           const inWeek = cell.dateStr >= weekStart && cell.dateStr <= weekEnd;
@@ -129,7 +137,7 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
 
       {!selected && (
         <p className="text-center text-[11px] text-muted/60 mt-3">
-          Tap a day to view your workout
+          Tap a day to view or log a workout
         </p>
       )}
 
@@ -138,7 +146,32 @@ export function WorkoutCalendar({ workoutLogs }: WorkoutCalendarProps) {
           <p className="text-text font-bold text-sm">{formatLong(selected)}</p>
 
           {selectedLogs.length === 0 ? (
-            <p className="text-muted text-sm mt-1">Rest day — no workout logged.</p>
+            manualDates.has(selected) ? (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-emerald-400 font-semibold">
+                  ✓ Marked as worked out
+                </span>
+                <button
+                  onClick={() => onRemoveManual(selected)}
+                  className="text-xs text-muted hover:text-red-400 font-semibold transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-muted text-sm mt-1">Rest day — no workout logged.</p>
+                <button
+                  onClick={() => onLogWorkout(selected)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-semibold text-sm rounded-xl py-2.5 transition-colors active:scale-[0.98]"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  I worked out this day
+                </button>
+              </>
+            )
           ) : (
             <div className="space-y-4 mt-3">
               {selectedLogs.map((log) => {

@@ -89,6 +89,13 @@ export interface ExerciseLog {
   sets: SetLog[];
 }
 
+// Retroactive "I worked out this day" marker (no exercise detail). Doc id = date string.
+export interface ManualWorkout {
+  id: string;
+  date: string;
+  createdAt: number;
+}
+
 export interface SetLog {
   setNumber: number;
   weight: number;

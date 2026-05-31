@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Layout } from '../components/ui/Layout';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useCollection, addDocument, setDocument, deleteDocument } from '../hooks/useFirestore';
@@ -8,7 +8,7 @@ import { BodyWeightChart } from '../components/analytics/BodyWeightChart';
 import { WorkoutCalendar } from '../components/analytics/WorkoutCalendar';
 import { EventsList } from '../components/analytics/EventsList';
 import { AddEventForm } from '../components/analytics/AddEventForm';
-import type { WorkoutLog, DailyLog, TimelineEvent } from '../types';
+import type { WorkoutLog, DailyLog, TimelineEvent, ManualWorkout } from '../types';
 
 export function Analytics() {
   const { user, profile } = useAuthContext();
@@ -22,6 +22,27 @@ export function Analytics() {
   const { data: events, loading: eventsLoading } = useCollection<TimelineEvent>(
     user ? `users/${user.uid}/events` : null
   );
+  const { data: manualWorkouts, loading: manualLoading } = useCollection<ManualWorkout>(
+    user ? `users/${user.uid}/manualWorkouts` : null
+  );
+
+  const manualDates = useMemo(
+    () => new Set(manualWorkouts.map((m) => m.date)),
+    [manualWorkouts]
+  );
+
+  const handleLogWorkout = useCallback(async (date: string) => {
+    if (!user) return;
+    await setDocument(`users/${user.uid}/manualWorkouts/${date}`, {
+      date,
+      createdAt: Date.now(),
+    });
+  }, [user]);
+
+  const handleRemoveManual = useCallback(async (date: string) => {
+    if (!user) return;
+    await deleteDocument(`users/${user.uid}/manualWorkouts/${date}`);
+  }, [user]);
 
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null);
@@ -50,7 +71,7 @@ export function Analytics() {
     }
   }, [user, editingEvent]);
 
-  const loading = workoutsLoading || dailyLoading || eventsLoading;
+  const loading = workoutsLoading || dailyLoading || eventsLoading || manualLoading;
 
   return (
     <Layout>
@@ -100,7 +121,12 @@ export function Analytics() {
                 </div>
                 <h3 className="text-text font-bold text-base">Workout Calendar</h3>
               </div>
-              <WorkoutCalendar workoutLogs={workoutLogs} />
+              <WorkoutCalendar
+                workoutLogs={workoutLogs}
+                manualDates={manualDates}
+                onLogWorkout={handleLogWorkout}
+                onRemoveManual={handleRemoveManual}
+              />
             </div>
 
             <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
