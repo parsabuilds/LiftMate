@@ -18,7 +18,6 @@ export interface UserProfile {
   photoURL: string;
   gender?: 'male' | 'female';
   showWarmups?: boolean;
-  restSeconds?: number;
   createdAt: number;
   currentStreak: number;
   longestStreak: number;

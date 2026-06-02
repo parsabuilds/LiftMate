@@ -9,14 +9,13 @@ import { Input } from '../components/ui/Input';
 import type { Routine, RoutineDay } from '../types';
 
 type Gender = 'male' | 'female';
-type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 const genderOptions: { value: Gender; label: string; emoji: string }[] = [
   { value: 'male', label: 'Male', emoji: '\uD83D\uDCAA' },
   { value: 'female', label: 'Female', emoji: '\uD83D\uDC83' },
 ];
 
-const REST_OPTIONS = [30, 60, 90, 120, 180] as const;
 const DAY_COUNT_OPTIONS = [2, 3, 4, 5, 6] as const;
 
 function StepFooter() {
@@ -42,7 +41,6 @@ export function Onboarding() {
 
   // Preferences
   const [showWarmups, setShowWarmups] = useState(true);
-  const [restSeconds, setRestSeconds] = useState(90);
 
   function goBack() {
     if (step === 1) return;
@@ -51,7 +49,6 @@ export function Onboarding() {
     else if (step === 4) setStep(3);
     else if (step === 5) setStep(4);
     else if (step === 6) setStep(useDefault ? 4 : 5);
-    else if (step === 7) setStep(6);
   }
 
   // Swipe-right-to-go-back gesture
@@ -93,7 +90,6 @@ export function Onboarding() {
         displayName: name,
         gender,
         showWarmups,
-        restSeconds,
       });
 
       const routine = useDefault ? getRoutineByGender(gender) : buildCustomRoutine();
@@ -390,8 +386,13 @@ export function Onboarding() {
             </button>
           </div>
 
-          <Button size="lg" fullWidth onClick={() => setStep(7)}>
-            Continue
+          <Button
+            size="lg"
+            fullWidth
+            loading={submitting}
+            onClick={handleSubmit}
+          >
+            Finish Setup
           </Button>
           <StepFooter />
         </div>
@@ -399,48 +400,5 @@ export function Onboarding() {
     );
   }
 
-  // Step 7: Rest Timer
-  return (
-    <div className={wrapper} {...swipeProps}>
-      <div className={glow} />
-      <div className={card}>
-        {backButton}
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-black text-text tracking-tight">Rest Timer</h2>
-          <p className="text-muted">How long do you want to rest between sets?</p>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3">
-          {REST_OPTIONS.map((sec) => (
-            <button
-              key={sec}
-              onClick={() => setRestSeconds(sec)}
-              className={`relative min-w-[72px] py-3 px-4 rounded-2xl text-center transition-all active:scale-[0.98] ${
-                restSeconds === sec
-                  ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-card/60 border border-white/[0.06] hover:border-white/10'
-              }`}
-            >
-              <span className={`text-lg font-bold ${restSeconds === sec ? 'text-primary' : 'text-text'}`}>
-                {sec}s
-              </span>
-              {sec === 90 && (
-                <span className="block text-[9px] font-bold uppercase tracking-wider text-primary mt-0.5">Recommended</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        <Button
-          size="lg"
-          fullWidth
-          loading={submitting}
-          onClick={handleSubmit}
-        >
-          Finish Setup
-        </Button>
-        <StepFooter />
-      </div>
-    </div>
-  );
+  return null;
 }

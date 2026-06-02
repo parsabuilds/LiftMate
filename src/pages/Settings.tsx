@@ -175,32 +175,6 @@ export function Settings() {
               }`} />
             </button>
           </div>
-
-          {/* Rest Timer */}
-          <div className="mb-1">
-            <p className="text-text text-sm font-medium mb-2">Rest Between Sets</p>
-            <div className="flex gap-2">
-              {([30, 60, 90, 120, 180] as const).map((sec) => {
-                const active = (profile?.restSeconds ?? 90) === sec;
-                return (
-                  <button
-                    key={sec}
-                    onClick={async () => {
-                      if (!user) return;
-                      await setDocument(`users/${user.uid}`, { restSeconds: sec });
-                    }}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                      active
-                        ? 'bg-primary text-white'
-                        : 'bg-card/60 border border-white/[0.06] text-muted hover:border-white/10'
-                    }`}
-                  >
-                    {sec}s
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Routines */}
