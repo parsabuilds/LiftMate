@@ -74,6 +74,21 @@ export function Workout() {
     return matching[0]?.exercises;
   }, [selectedDayType, previousWorkouts]);
 
+  // All-time best (heaviest completed) weight per exercise, across the full
+  // history regardless of day type. Used to flag a set as a PR.
+  const bestWeightByExercise = useMemo(() => {
+    const best: Record<string, number> = {};
+    for (const w of previousWorkouts) {
+      for (const ex of w.exercises) {
+        for (const s of ex.sets) {
+          if (!s.completed) continue;
+          if (s.weight > (best[ex.exerciseId] ?? 0)) best[ex.exerciseId] = s.weight;
+        }
+      }
+    }
+    return best;
+  }, [previousWorkouts]);
+
   const prs = useMemo(() => {
     return exerciseLogs.flatMap((log) =>
       log.sets
@@ -409,6 +424,7 @@ export function Workout() {
             <ExerciseTracker
               exercises={selectedExercises}
               previousLogs={previousLogsForDay}
+              bestWeights={bestWeightByExercise}
               onComplete={handleLoggingComplete}
               onBack={goBack}
               onDeleteExercise={handleDeleteExercise}

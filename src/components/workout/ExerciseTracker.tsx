@@ -11,6 +11,7 @@ import type { Exercise, ExerciseLog, SetLog } from '../../types';
 interface ExerciseTrackerProps {
   exercises: Exercise[];
   previousLogs?: ExerciseLog[];
+  bestWeights?: Record<string, number>;
   onComplete: (logs: ExerciseLog[]) => void;
   onBack: () => void;
   onDeleteExercise: (index: number) => void;
@@ -27,7 +28,7 @@ function initSets(exercise: Exercise): SetRow[] {
   }));
 }
 
-export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, onDeleteExercise, onAddExercise }: ExerciseTrackerProps) {
+export function ExerciseTracker({ exercises, previousLogs, bestWeights, onComplete, onBack, onDeleteExercise, onAddExercise }: ExerciseTrackerProps) {
   const {
     currentExerciseIndex,
     setCurrentExerciseIndex,
@@ -50,9 +51,7 @@ export function ExerciseTracker({ exercises, previousLogs, onComplete, onBack, o
 
   const exercise = exercises[currentExerciseIndex];
   const prevLog = previousLogs?.find((l) => l.exerciseId === exercise?.id);
-  const prevMaxWeight = prevLog
-    ? Math.max(...prevLog.sets.map((s) => s.weight), 0)
-    : 0;
+  const prevMaxWeight = bestWeights?.[exercise?.id] ?? 0;
 
   const prevHint = prevLog
     ? `Last time: ${prevLog.sets.length}x${prevLog.sets[0]?.reps ?? '?'} @ ${prevLog.sets[0]?.weight ?? '?'} lbs`
