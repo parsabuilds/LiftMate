@@ -28,6 +28,14 @@ function formatLong(dateStr: string): string {
   });
 }
 
+function formatShort(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function WorkoutCalendar({
   workoutLogs,
   manualDates,
@@ -35,6 +43,7 @@ export function WorkoutCalendar({
   onRemoveManual,
 }: WorkoutCalendarProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [periodOffset, setPeriodOffset] = useState(0);
 
   const workoutMap = useMemo(() => {
     const map = new Map<string, WorkoutLog[]>();
@@ -46,16 +55,18 @@ export function WorkoutCalendar({
     return map;
   }, [workoutLogs]);
 
-  // 28 days (4 weeks) ending with the current week as the bottom row.
+  // 28 days (4 weeks); periodOffset shifts the window back in 4-week steps.
   const cells = useMemo(() => {
     const start = getMondayOfWeek(new Date());
-    start.setDate(start.getDate() - 21);
+    start.setDate(start.getDate() - 21 - periodOffset * 28);
     return Array.from({ length: 28 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       return { day: d.getDate(), dateStr: getLocalDateString(d) };
     });
-  }, []);
+  }, [periodOffset]);
+
+  const rangeLabel = `${formatShort(cells[0].dateStr)} – ${formatShort(cells[27].dateStr)}`;
 
   const todayStr = getLocalDateString();
   const monday = getMondayOfWeek(new Date());
@@ -68,6 +79,35 @@ export function WorkoutCalendar({
 
   return (
     <div>
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => {
+            setPeriodOffset((p) => p + 1);
+            setSelected(null);
+          }}
+          aria-label="Previous 4 weeks"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-muted hover:text-text hover:bg-white/[0.08] transition-colors active:scale-95"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span className="text-xs font-semibold text-muted">{rangeLabel}</span>
+        <button
+          onClick={() => {
+            setPeriodOffset((p) => Math.max(0, p - 1));
+            setSelected(null);
+          }}
+          disabled={periodOffset === 0}
+          aria-label="Next 4 weeks"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-muted hover:text-text hover:bg-white/[0.08] transition-colors active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04] disabled:hover:text-muted disabled:active:scale-100"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+
       <div className="grid grid-cols-7 gap-1.5 mb-2">
         {DAY_LABELS.map((label, i) => (
           <div key={i} className="text-center text-[11px] text-muted/70 font-bold">
