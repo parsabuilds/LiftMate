@@ -21,6 +21,8 @@ export const mensRoutine: Routine = {
             { id: 'push-chest-4', name: 'Push-Ups', sets: 3, reps: '15-20', youtubeId: 'IODxDxX7oi4' },
             { id: 'push-chest-5', name: 'Decline Bench Press', sets: 3, reps: '8-10', youtubeId: 'oIgci8aNsG0' },
             { id: 'push-chest-6', name: 'Dumbbell Chest Fly', sets: 3, reps: '12-15', youtubeId: 'Nhvz9EzdJ4U' },
+            { id: 'push-chest-7', name: 'Incline Barbell Bench Press', sets: 3, reps: '8-10', youtubeId: 'SrqOu55lrYU' },
+            { id: 'push-chest-8', name: 'Low Cable Flyes (Low-to-High)', sets: 3, reps: '12-15', youtubeId: 'eQ_NBB6OBH4' },
           ],
         },
         {
