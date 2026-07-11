@@ -4,6 +4,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { DaySelector } from '../components/workout/DaySelector';
 import { ExerciseSelector } from '../components/workout/ExerciseSelector';
+import { SupersetPairing } from '../components/workout/SupersetPairing';
 import { WarmupCarousel } from '../components/workout/WarmupCarousel';
 import { ExerciseTracker } from '../components/workout/ExerciseTracker';
 import { CardioAbsSelector } from '../components/workout/CardioAbsSelector';
@@ -11,16 +12,24 @@ import { WorkoutSummary } from '../components/workout/WorkoutSummary';
 import { AddExerciseModal } from '../components/workout/AddExerciseModal';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
+import { initExerciseLog, buildStations } from '../utils/superset';
 import { useCollection, useDocument } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
 import { getLocalDateString } from '../utils/date';
-import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities } from '../types';
+import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities, SupersetPair } from '../types';
 
-const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'warmup', 'logging', 'cardioAbs', 'summary'];
+const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'supersetPair', 'warmup', 'logging', 'cardioAbs', 'summary'];
 
 function stepIndex(step: WorkoutStep): number {
   return STEP_ORDER.indexOf(step);
+}
+
+// Reorder in-progress logs to match a new exercise arrangement, keeping any
+// sets already logged and seeding fresh logs for unseen exercises.
+function alignLogs(exercises: Exercise[], logs: ExerciseLog[]): ExerciseLog[] {
+  const byId = new Map(logs.filter(Boolean).map((l) => [l.exerciseId, l]));
+  return exercises.map((ex) => byId.get(ex.id) ?? initExerciseLog(ex));
 }
 
 export function Workout() {
@@ -37,10 +46,10 @@ export function Workout() {
     startTime,
     isRest, setIsRest,
     clearWorkout,
-    currentExerciseIndex, setCurrentExerciseIndex,
+    currentStationIndex, setCurrentStationIndex,
     inProgressLogs, setInProgressLogs,
-    setCurrentSets,
     firstSetConfirmedAt,
+    supersetPairs, setSupersetPairs,
   } = useWorkoutContext();
 
   const { data: firestoreRoutine } = useDocument<Routine>(
@@ -66,13 +75,20 @@ export function Workout() {
       .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
   }, [previousWorkouts]);
 
-  const previousLogsForDay = useMemo(() => {
-    if (!selectedDayType || !previousWorkouts.length) return undefined;
-    const matching = previousWorkouts
-      .filter((w) => w.dayType === selectedDayType && w.exercises.length > 0)
-      .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
-    return matching[0]?.exercises;
-  }, [selectedDayType, previousWorkouts]);
+  // Most recent log per exercise across the full history, regardless of day
+  // type — so "last time" hints also work in mixed superset sessions.
+  const previousLogsByExercise = useMemo(() => {
+    const latest: Record<string, { at: number; log: ExerciseLog }> = {};
+    for (const w of previousWorkouts) {
+      const at = w.startedAt ?? 0;
+      for (const ex of w.exercises) {
+        if (!ex.sets.length) continue;
+        const current = latest[ex.exerciseId];
+        if (!current || at > current.at) latest[ex.exerciseId] = { at, log: ex };
+      }
+    }
+    return Object.values(latest).map((v) => v.log);
+  }, [previousWorkouts]);
 
   // All-time best (heaviest completed) weight per exercise, across the full
   // history regardless of day type. Used to flag a set as a PR.
@@ -111,14 +127,14 @@ export function Workout() {
         <div className="relative z-10">
           <h1 className="text-3xl font-black text-text tracking-tight mb-6">Rest Day</h1>
           <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-8 text-center backdrop-blur-sm">
-            <div className="text-5xl mb-4">{'\uD83D\uDE34'}</div>
+            <div className="text-5xl mb-4">{'😴'}</div>
             <h2 className="text-xl font-bold text-text mb-2">Enjoy Your Rest Day</h2>
             <p className="text-muted">Recovery is when your muscles grow. Take it easy today!</p>
             <button
               onClick={() => { setIsRest(false); setCurrentStep('daySelect'); }}
               className="mt-4 text-primary text-sm font-semibold hover:underline"
             >
-              {'\u2190'} Choose a different day
+              {'←'} Choose a different day
             </button>
           </div>
         </div>
@@ -135,13 +151,38 @@ export function Workout() {
     if (found) {
       setSelectedDayType(day);
       setRoutineDay(found);
+      setSupersetPairs([]);
       setCurrentStep('exerciseSelect');
     }
   };
 
-  const handleExerciseSelect = (selected: Record<string, Exercise[]>) => {
-    const flat = Object.values(selected).flat();
+  const handleExerciseSelect = (selected: Record<string, Exercise[]>, buildSupersets: boolean) => {
+    const flat: Exercise[] = [];
+    const seen = new Set<string>();
+    for (const ex of Object.values(selected).flat()) {
+      if (seen.has(ex.id)) continue;
+      seen.add(ex.id);
+      flat.push(ex);
+    }
+
     setSelectedExercises(flat);
+    setSupersetPairs([]);
+    setInProgressLogs(flat.map(initExerciseLog));
+    setCurrentStationIndex(0);
+    if (buildSupersets) {
+      setCurrentStep('supersetPair');
+    } else if (warmupsEnabled) {
+      setCurrentStep('warmup');
+    } else {
+      setCurrentStep('logging');
+    }
+  };
+
+  const handlePairingConfirm = (ordered: Exercise[], pairs: SupersetPair[]) => {
+    setSelectedExercises(ordered);
+    setSupersetPairs(pairs);
+    setInProgressLogs(alignLogs(ordered, inProgressLogs));
+    setCurrentStationIndex(0);
     if (warmupsEnabled) {
       setCurrentStep('warmup');
     } else {
@@ -161,64 +202,48 @@ export function Workout() {
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
 
   const handleDeleteExercise = useCallback((indexToDelete: number) => {
+    const deleted = selectedExercises[indexToDelete];
+    if (!deleted) return;
+
     const newExercises = selectedExercises.filter((_, i) => i !== indexToDelete);
+    const newLogs = inProgressLogs.filter((_, i) => i !== indexToDelete);
+    const newPairs = supersetPairs.filter((p) => p.a !== deleted.id && p.b !== deleted.id);
 
     if (newExercises.length === 0) {
       setExerciseLogs([]);
       setSelectedExercises([]);
       setInProgressLogs([]);
-      setCurrentExerciseIndex(0);
-      setCurrentSets([]);
+      setSupersetPairs(newPairs);
+      setCurrentStationIndex(0);
       setCurrentStep('cardioAbs');
       return;
     }
 
-    // Rebuild inProgressLogs without the deleted index
-    const newLogs: ExerciseLog[] = [];
-    for (let i = 0; i < selectedExercises.length; i++) {
-      if (i === indexToDelete) continue;
-      newLogs.push(inProgressLogs[i]);
-    }
+    // Land on the station that still holds the rest of the current station's
+    // exercises (a pair partner survives a delete), else clamp.
+    const oldStations = buildStations(selectedExercises, supersetPairs);
+    const oldIndex = Math.max(0, Math.min(currentStationIndex, oldStations.length - 1));
+    const survivingId = oldStations[oldIndex].indices
+      .map((i) => selectedExercises[i].id)
+      .find((id) => id !== deleted.id);
 
-    // Adjust currentExerciseIndex
-    let newIndex = currentExerciseIndex;
-    if (indexToDelete < currentExerciseIndex) {
-      newIndex = currentExerciseIndex - 1;
-    } else if (indexToDelete === currentExerciseIndex) {
-      if (newIndex >= newExercises.length) {
-        newIndex = newExercises.length - 1;
-      }
+    const newStations = buildStations(newExercises, newPairs);
+    let newIndex = Math.min(oldIndex, newStations.length - 1);
+    if (survivingId) {
+      const found = newStations.findIndex((st) => st.indices.some((i) => newExercises[i].id === survivingId));
+      if (found >= 0) newIndex = found;
     }
 
     setSelectedExercises(newExercises);
     setInProgressLogs(newLogs);
-    setCurrentExerciseIndex(newIndex);
-
-    // Restore sets for the new current exercise
-    const targetLog = newLogs[newIndex];
-    if (targetLog && targetLog.sets && targetLog.sets.length > 0) {
-      setCurrentSets(targetLog.sets.map((s) => ({
-        setNumber: s.setNumber,
-        reps: s.reps,
-        weight: s.weight,
-        completed: s.completed,
-        isPR: s.isPR ?? false,
-      })));
-    } else {
-      const ex = newExercises[newIndex];
-      setCurrentSets(Array.from({ length: ex.sets }, (_, i) => ({
-        setNumber: i + 1,
-        reps: 0,
-        weight: 0,
-        completed: false,
-        isPR: false,
-      })));
-    }
-  }, [selectedExercises, inProgressLogs, currentExerciseIndex, setSelectedExercises, setInProgressLogs, setCurrentExerciseIndex, setCurrentSets, setExerciseLogs, setCurrentStep]);
+    setSupersetPairs(newPairs);
+    setCurrentStationIndex(newIndex);
+  }, [selectedExercises, inProgressLogs, supersetPairs, currentStationIndex, setSelectedExercises, setInProgressLogs, setSupersetPairs, setCurrentStationIndex, setExerciseLogs, setCurrentStep]);
 
   const handleAddExercise = useCallback((exercise: Exercise) => {
     setSelectedExercises([...selectedExercises, exercise]);
-  }, [selectedExercises, setSelectedExercises]);
+    setInProgressLogs([...inProgressLogs, initExerciseLog(exercise)]);
+  }, [selectedExercises, inProgressLogs, setSelectedExercises, setInProgressLogs]);
 
   const handlePostWorkoutSelect = (activities: PostWorkoutActivities) => {
     setPostWorkout(activities);
@@ -234,14 +259,36 @@ export function Workout() {
     setSaving(true);
     setSaveError(null);
     try {
+      // Stamp superset groups onto exercises whose pair partner was also
+      // logged, so history can show what was performed together.
+      let exercisesToSave: ExerciseLog[] = exerciseLogs;
+      let supersetCount = 0;
+      if (supersetPairs.length > 0) {
+        const loggedIds = new Set(exerciseLogs.map((l) => l.exerciseId));
+        const groupOf: Record<string, number> = {};
+        for (const pair of supersetPairs) {
+          if (loggedIds.has(pair.a) && loggedIds.has(pair.b)) {
+            supersetCount += 1;
+            groupOf[pair.a] = supersetCount;
+            groupOf[pair.b] = supersetCount;
+          }
+        }
+        exercisesToSave = exerciseLogs.map((l) =>
+          groupOf[l.exerciseId] ? { ...l, supersetGroup: groupOf[l.exerciseId] } : l
+        );
+      }
+
       const workoutLog: Record<string, unknown> = {
         date: getLocalDateString(firstSetConfirmedAt ? new Date(firstSetConfirmedAt) : undefined),
         dayType: selectedDayType,
         startedAt: startTime,
         completedAt: Date.now(),
-        exercises: exerciseLogs,
+        exercises: exercisesToSave,
         energyRating,
       };
+      if (supersetCount > 0) {
+        workoutLog.isSuperset = true;
+      }
       if (Object.keys(postWorkout).length > 0) {
         workoutLog.postWorkout = postWorkout;
       }
@@ -261,34 +308,27 @@ export function Workout() {
       setCurrentStep('cardioAbs');
       return;
     }
-    // CardioAbs -> Logging (restore exercise state from exerciseLogs)
-    if (currentStep === 'cardioAbs' && exerciseLogs.length > 0) {
-      const lastIndex = selectedExercises.length - 1;
-      const restoredLogs: ExerciseLog[] = [];
-      for (const log of exerciseLogs) {
-        const idx = selectedExercises.findIndex(ex => ex.id === log.exerciseId);
-        if (idx >= 0) {
-          restoredLogs[idx] = log;
-        }
-      }
-      setInProgressLogs(restoredLogs);
-      setCurrentExerciseIndex(lastIndex);
-      const lastLog = restoredLogs[lastIndex];
-      if (lastLog && lastLog.sets.length > 0) {
-        setCurrentSets(lastLog.sets.map((s) => ({
-          setNumber: s.setNumber,
-          reps: s.reps,
-          weight: s.weight,
-          completed: s.completed,
-          isPR: s.isPR ?? false,
-        })));
-      }
+    // CardioAbs -> Logging (logs are live in context; land on the last station)
+    if (currentStep === 'cardioAbs' && selectedExercises.length > 0) {
+      const stations = buildStations(selectedExercises, supersetPairs);
+      setCurrentStationIndex(Math.max(0, stations.length - 1));
       setCurrentStep('logging');
       return;
     }
-    // Logging -> skip warmup if disabled
-    if (currentStep === 'logging' && !warmupsEnabled) {
-      setCurrentStep('exerciseSelect');
+    // Logging -> warmup / pairing / exercise select
+    if (currentStep === 'logging') {
+      if (warmupsEnabled) {
+        setCurrentStep('warmup');
+      } else if (supersetPairs.length > 0) {
+        setCurrentStep('supersetPair');
+      } else {
+        setCurrentStep('exerciseSelect');
+      }
+      return;
+    }
+    // Warmup -> pairing when supersets were built, exercise select otherwise
+    if (currentStep === 'warmup') {
+      setCurrentStep(supersetPairs.length > 0 ? 'supersetPair' : 'exerciseSelect');
       return;
     }
     const idx = stepIndex(currentStep);
@@ -305,6 +345,7 @@ export function Workout() {
   const titles: Record<WorkoutStep, string> = {
     daySelect: 'Workout',
     exerciseSelect: 'Choose Exercises',
+    supersetPair: 'Build Supersets',
     warmup: 'Stretches',
     logging: selectedDayType ?? 'Workout',
     cardioAbs: 'Post-Workout',
@@ -350,8 +391,8 @@ export function Workout() {
           </div>
         </div>}
 
-        {/* Back button — shown for exerciseSelect and warmup only (other steps have their own) */}
-        {(currentStep === 'exerciseSelect' || currentStep === 'warmup') && (
+        {/* Back button — shown for exerciseSelect, supersetPair and warmup (other steps have their own) */}
+        {(currentStep === 'exerciseSelect' || currentStep === 'supersetPair' || currentStep === 'warmup') && (
           <button onClick={goBack} className="text-primary text-sm font-semibold mb-4 hover:underline flex items-center gap-1">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 19l-7-7 7-7" />
@@ -415,6 +456,14 @@ export function Workout() {
           />
         )}
 
+        {currentStep === 'supersetPair' && (
+          <SupersetPairing
+            exercises={selectedExercises}
+            pairs={supersetPairs}
+            onConfirm={handlePairingConfirm}
+          />
+        )}
+
         {currentStep === 'warmup' && routineDay && (
           <WarmupCarousel warmups={routineDay.warmups} onComplete={handleWarmupComplete} />
         )}
@@ -423,7 +472,8 @@ export function Workout() {
           <>
             <ExerciseTracker
               exercises={selectedExercises}
-              previousLogs={previousLogsForDay}
+              supersetPairs={supersetPairs}
+              previousLogs={previousLogsByExercise}
               bestWeights={bestWeightByExercise}
               onComplete={handleLoggingComplete}
               onBack={goBack}

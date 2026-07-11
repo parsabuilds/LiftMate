@@ -25,6 +25,7 @@
 - **Progress Analytics** -- Visualize strength gains with charts for volume, PRs, body weight, and weekly trends
 - **Goal Tracking** -- Set strength targets with progress rings, milestone badges, and streak tracking
 - **Routine Management** -- Choose from built-in routines (PPL, Upper/Lower, Full Body) or build your own
+- **Supersets** -- Pair two exercises from your day to do back to back, log both on one screen, and history remembers sets were done as a superset
 - **Progressive Overload** -- Auto-suggestions for your next session based on past performance
 - **Nutrition Tracking** -- Track daily calories and macros against your targets
 - **Daily Checklist** -- Configurable daily habit tracker that resets at midnight

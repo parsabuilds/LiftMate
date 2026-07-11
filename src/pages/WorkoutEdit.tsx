@@ -168,6 +168,11 @@ export function WorkoutEdit() {
         {/* Workout meta */}
         <div className="flex items-center gap-3 text-sm text-muted">
           <span className="font-bold text-text">{workoutLog.dayType}</span>
+          {workoutLog.isSuperset && (
+            <span className="text-violet-300 text-xs font-bold bg-violet-500/10 border border-violet-500/25 rounded-full px-2 py-0.5">
+              {'⚡'} Superset
+            </span>
+          )}
           <span>·</span>
           <span>{workoutLog.date}</span>
           {durationMin > 0 && (
@@ -206,6 +211,7 @@ export function WorkoutEdit() {
                   : 'bg-card/60 text-muted border border-white/[0.06]'
               }`}
             >
+              {ex.supersetGroup ? `${'\u26a1'}${ex.supersetGroup} ` : ''}
               {ex.exerciseName.length > 15 ? ex.exerciseName.slice(0, 15) + '\u2026' : ex.exerciseName}
             </button>
           ))}

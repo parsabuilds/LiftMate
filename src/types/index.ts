@@ -1,6 +1,12 @@
 export type DayType = string;
 
-export type WorkoutStep = 'daySelect' | 'exerciseSelect' | 'warmup' | 'logging' | 'cardioAbs' | 'summary';
+export type WorkoutStep = 'daySelect' | 'exerciseSelect' | 'supersetPair' | 'warmup' | 'logging' | 'cardioAbs' | 'summary';
+
+// A superset pairing of two selected exercises, referenced by exercise id.
+export interface SupersetPair {
+  a: string;
+  b: string;
+}
 
 export type CardioAbsChoice = 'cardio' | 'abs' | 'skip';
 
@@ -80,12 +86,15 @@ export interface WorkoutLog {
   cardioMinutes?: number;
   cardioCalories?: number;
   postWorkout?: PostWorkoutActivities;
+  isSuperset?: boolean;
 }
 
 export interface ExerciseLog {
   exerciseId: string;
   exerciseName: string;
   sets: SetLog[];
+  // Exercises sharing a group number were performed together as a superset.
+  supersetGroup?: number;
 }
 
 // Retroactive "I worked out this day" marker (no exercise detail). Doc id = date string.
