@@ -60,10 +60,9 @@ export function WorkoutCard() {
   if (isWorkoutInProgress && activeDayTypeFromContext) {
     // Show active workout card
     const exerciseCount = selectedExercises.length;
-    // After logging is complete, exerciseLogs is populated and inProgressLogs is reset
     const completedExercises = (currentStep === 'cardioAbs' || currentStep === 'summary')
       ? exerciseCount
-      : inProgressLogs.length;
+      : inProgressLogs.filter((log) => log && log.sets.some((s) => s.completed)).length;
     const progressPct = exerciseCount > 0
       ? Math.round((completedExercises / exerciseCount) * 100)
       : 0;

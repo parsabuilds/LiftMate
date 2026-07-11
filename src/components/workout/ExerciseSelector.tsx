@@ -5,7 +5,8 @@ import type { MuscleGroup, Exercise } from '../../types';
 
 interface ExerciseSelectorProps {
   muscleGroups: MuscleGroup[];
-  onComplete: (selected: Record<string, Exercise[]>) => void;
+  // buildSupersets: user wants to pair some picks into supersets before starting
+  onComplete: (selected: Record<string, Exercise[]>, buildSupersets: boolean) => void;
 }
 
 export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorProps) {
@@ -30,8 +31,8 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
     });
   };
 
-  const anyGroupHasSelection = muscleGroups.some(
-    (mg) => (selections[mg.name]?.length ?? 0) > 0
+  const totalSelected = muscleGroups.reduce(
+    (sum, mg) => sum + (selections[mg.name]?.length ?? 0), 0
   );
 
   return (
@@ -79,9 +80,19 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
         </div>
       ))}
 
-      <Button fullWidth disabled={!anyGroupHasSelection} onClick={() => onComplete(selections)}>
-        Start Workout
-      </Button>
+      <div className="space-y-2">
+        {totalSelected >= 2 && (
+          <button
+            onClick={() => onComplete(selections, true)}
+            className="w-full min-h-[44px] rounded-xl font-medium text-sm bg-violet-500/10 border border-violet-500/30 text-violet-300 hover:bg-violet-500/20 active:scale-[0.99] transition-all"
+          >
+            {'⚡'} Pair Supersets First
+          </button>
+        )}
+        <Button fullWidth disabled={totalSelected === 0} onClick={() => onComplete(selections, false)}>
+          Start Workout
+        </Button>
+      </div>
     </div>
   );
 }

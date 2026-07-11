@@ -1,16 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { WorkoutStep, DayType, Exercise, ExerciseLog, RoutineDay, PostWorkoutActivities } from '../types';
+import { initExerciseLog } from '../utils/superset';
+import type { WorkoutStep, DayType, Exercise, ExerciseLog, RoutineDay, PostWorkoutActivities, SupersetPair } from '../types';
 
 const STORAGE_KEY = 'liftmate_active_workout';
-
-export interface SetRow {
-  setNumber: number;
-  reps: number;
-  weight: number;
-  completed: boolean;
-  isPR: boolean;
-}
 
 interface WorkoutState {
   currentStep: WorkoutStep;
@@ -21,10 +14,13 @@ interface WorkoutState {
   postWorkout: PostWorkoutActivities;
   startTime: number;
   isRest: boolean;
-  currentExerciseIndex: number;
+  // Index into the station list (a station is one exercise or a superset pair)
+  currentStationIndex: number;
+  // Live log for every selected exercise, kept in lockstep with selectedExercises
   inProgressLogs: ExerciseLog[];
-  currentSets: SetRow[];
   firstSetConfirmedAt: number | null;
+  // Exercises paired to be performed back to back as supersets
+  supersetPairs: SupersetPair[];
 }
 
 const defaultState: WorkoutState = {
@@ -36,16 +32,54 @@ const defaultState: WorkoutState = {
   postWorkout: {},
   startTime: Date.now(),
   isRest: false,
-  currentExerciseIndex: 0,
+  currentStationIndex: 0,
   inProgressLogs: [],
-  currentSets: [],
   firstSetConfirmedAt: null,
+  supersetPairs: [],
 };
+
+// Pre-superset sessions stored a currentExerciseIndex plus a currentSets
+// scratch buffer for the exercise being logged, and only wrote inProgressLogs
+// on navigation. Rebuild a complete inProgressLogs from what they saved.
+interface LegacySetRow {
+  setNumber: number;
+  reps: number;
+  weight: number;
+  completed: boolean;
+  isPR?: boolean;
+}
+interface LegacyState extends Partial<WorkoutState> {
+  currentExerciseIndex?: number;
+  currentSets?: LegacySetRow[];
+}
+
+function migrateState(parsed: LegacyState): WorkoutState {
+  const state: WorkoutState = { ...defaultState, ...parsed, startTime: parsed.startTime ?? Date.now() };
+  if (parsed.currentStationIndex === undefined && parsed.currentExerciseIndex !== undefined) {
+    state.currentStationIndex = parsed.currentExerciseIndex;
+  }
+  if (state.selectedExercises.length > 0) {
+    const legacyIndex = parsed.currentExerciseIndex;
+    state.inProgressLogs = state.selectedExercises.map((ex, i) => {
+      const existing = state.inProgressLogs[i];
+      if (existing && existing.sets.length > 0) return existing;
+      if (i === legacyIndex && parsed.currentSets && parsed.currentSets.length > 0) {
+        return {
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          sets: parsed.currentSets.map((s) => ({ ...s, isPR: s.isPR ?? false })),
+        };
+      }
+      return initExerciseLog(ex);
+    });
+  }
+  return state;
+}
 
 function loadState(): WorkoutState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as WorkoutState;
+    if (raw) return migrateState(JSON.parse(raw) as LegacyState);
   } catch {
     // private browsing or corrupt data
   }
@@ -76,10 +110,11 @@ interface WorkoutContextValue extends WorkoutState {
   setExerciseLogs: (logs: ExerciseLog[]) => void;
   setPostWorkout: (activities: PostWorkoutActivities) => void;
   setIsRest: (rest: boolean) => void;
-  setCurrentExerciseIndex: (index: number) => void;
+  setCurrentStationIndex: (index: number) => void;
   setInProgressLogs: (logs: ExerciseLog[]) => void;
-  setCurrentSets: (sets: SetRow[]) => void;
+  updateInProgressLog: (index: number, log: ExerciseLog) => void;
   setFirstSetConfirmedAt: (time: number | null) => void;
+  setSupersetPairs: (pairs: SupersetPair[]) => void;
   clearWorkout: () => void;
 }
 
@@ -125,20 +160,27 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, isRest: rest }));
   }, []);
 
-  const setCurrentExerciseIndex = useCallback((index: number) => {
-    setState((prev) => ({ ...prev, currentExerciseIndex: index }));
+  const setCurrentStationIndex = useCallback((index: number) => {
+    setState((prev) => ({ ...prev, currentStationIndex: index }));
   }, []);
 
   const setInProgressLogs = useCallback((logs: ExerciseLog[]) => {
     setState((prev) => ({ ...prev, inProgressLogs: logs }));
   }, []);
 
-  const setCurrentSets = useCallback((sets: SetRow[]) => {
-    setState((prev) => ({ ...prev, currentSets: sets }));
+  const updateInProgressLog = useCallback((index: number, log: ExerciseLog) => {
+    setState((prev) => ({
+      ...prev,
+      inProgressLogs: prev.inProgressLogs.map((l, i) => (i === index ? log : l)),
+    }));
   }, []);
 
   const setFirstSetConfirmedAt = useCallback((time: number | null) => {
     setState((prev) => ({ ...prev, firstSetConfirmedAt: time }));
+  }, []);
+
+  const setSupersetPairs = useCallback((pairs: SupersetPair[]) => {
+    setState((prev) => ({ ...prev, supersetPairs: pairs }));
   }, []);
 
   const clearWorkout = useCallback(() => {
@@ -157,10 +199,11 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         setExerciseLogs,
         setPostWorkout,
         setIsRest,
-        setCurrentExerciseIndex,
+        setCurrentStationIndex,
         setInProgressLogs,
-        setCurrentSets,
+        updateInProgressLog,
         setFirstSetConfirmedAt,
+        setSupersetPairs,
         clearWorkout,
       }}
     >
