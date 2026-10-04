@@ -7,7 +7,10 @@ import { Input } from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
 import { useCollection, useDocument, setDocument, deleteDocument, addDocument } from '../hooks/useFirestore';
 
+import { getRoutineByGender } from '../data/defaultRoutines';
 import type { Routine, ChecklistItem } from '../types';
+
+const DEFAULT_ROUTINE_IDS = new Set(['mens-ppl', 'womens-fbs']);
 
 interface CustomRoutine extends Routine {
   name?: string;
@@ -24,7 +27,7 @@ export function Settings() {
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
 
-  const { data: currentRoutine } = useDocument<Routine>(
+  const { data: currentRoutine } = useDocument<CustomRoutine>(
     user ? `users/${user.uid}/routine/current` : null
   );
 
@@ -66,8 +69,28 @@ export function Settings() {
     setEditingName(false);
   };
 
+  const defaultRoutine = getRoutineByGender(profile?.gender ?? 'male');
+  const usingDefault = !currentRoutine || DEFAULT_ROUTINE_IDS.has(currentRoutine.id);
+
+  // The active routine lives at routine/current; saved routines are copied there.
+  const handleUseRoutine = async (routine: CustomRoutine) => {
+    if (!user) return;
+    await setDocument(`users/${user.uid}/routine/current`, {
+      id: routine.id,
+      name: routine.name ?? null,
+      gender: routine.gender ?? profile?.gender ?? 'male',
+      days: routine.days,
+    });
+  };
+
+  const handleUseDefaultRoutine = async () => {
+    if (!user) return;
+    await setDocument(`users/${user.uid}/routine/current`, { ...defaultRoutine, name: null });
+  };
+
   const handleDeleteRoutine = async (routineId: string) => {
     if (!user) return;
+    if (currentRoutine?.id === routineId) await handleUseDefaultRoutine();
     await deleteDocument(`users/${user.uid}/routines/${routineId}`);
   };
 
@@ -195,7 +218,7 @@ export function Settings() {
             <div className="flex justify-between">
               <span className="text-muted">Active Routine</span>
               <span className="text-text font-medium">
-                {currentRoutine?.gender ? `Default (${currentRoutine.days.length}-day)` : currentRoutine ? `Custom (${currentRoutine.days.length}-day)` : `Default (${profile?.gender || 'male'})`}
+                {usingDefault ? `Default (${defaultRoutine.days.length}-day)` : `${currentRoutine?.name || 'Custom'} (${currentRoutine?.days.length ?? 0}-day)`}
               </span>
             </div>
           </div>
@@ -209,17 +232,34 @@ export function Settings() {
                     <p className="text-text text-sm font-medium">{r.name || r.id}</p>
                     <p className="text-muted text-xs">{r.days.length} day{r.days.length !== 1 ? 's' : ''}</p>
                   </div>
-                  <button
-                    onClick={() => handleDeleteRoutine(r.id)}
-                    className="text-red-400 text-sm min-h-[44px] px-2 font-medium"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center">
+                    {currentRoutine?.id === r.id ? (
+                      <span className="text-success text-sm font-medium px-2">Active</span>
+                    ) : (
+                      <button
+                        onClick={() => handleUseRoutine(r)}
+                        className="text-primary text-sm min-h-[44px] px-2 font-medium"
+                      >
+                        Use
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteRoutine(r.id)}
+                      className="text-red-400 text-sm min-h-[44px] px-2 font-medium"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
+          {!usingDefault && (
+            <Button variant="ghost" fullWidth onClick={handleUseDefaultRoutine} className="mb-2">
+              Switch to Default Routine
+            </Button>
+          )}
           <Button variant="secondary" fullWidth onClick={() => navigate('/routine-builder')}>
             Create Custom Routine
           </Button>

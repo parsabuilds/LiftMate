@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useDocument, updateDocument } from '../hooks/useFirestore';
 import { getEquipmentType } from '../utils/exerciseEquipment';
+import { WeightInput } from '../components/ui/WeightInput';
 import type { WorkoutLog, ExerciseLog, SetLog } from '../types';
 
 export function WorkoutEdit() {
@@ -95,7 +96,7 @@ export function WorkoutEdit() {
       const cleanedExercises = editedExercises
         .map((ex) => ({
           ...ex,
-          sets: ex.sets.filter((s) => s.reps > 0 && s.weight > 0),
+          sets: ex.sets.filter((s) => s.reps > 0),
         }))
         .filter((ex) => ex.sets.length > 0);
 
@@ -260,17 +261,13 @@ export function WorkoutEdit() {
                     type="number"
                     inputMode="numeric"
                     value={set.reps || ''}
-                    onChange={(e) => updateSet(activeExerciseIndex, si, 'reps', parseInt(e.target.value) || 0)}
+                    onChange={(e) => updateSet(activeExerciseIndex, si, 'reps', Math.max(0, parseInt(e.target.value) || 0))}
                     className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
                     placeholder="reps"
                   />
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={set.weight || ''}
-                    onChange={(e) => updateSet(activeExerciseIndex, si, 'weight', parseInt(e.target.value) || 0)}
-                    className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-                    placeholder="lbs"
+                  <WeightInput
+                    value={set.weight}
+                    onChange={(value) => updateSet(activeExerciseIndex, si, 'weight', value)}
                   />
                   <button
                     onClick={() => removeSet(activeExerciseIndex, si)}

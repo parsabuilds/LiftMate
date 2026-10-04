@@ -51,6 +51,7 @@ export function Workout() {
     inProgressLogs, setInProgressLogs,
     firstSetConfirmedAt,
     supersetPairs, setSupersetPairs,
+    resetStartTime,
   } = useWorkoutContext();
 
   const { data: firestoreRoutine } = useDocument<Routine>(
@@ -117,42 +118,17 @@ export function Workout() {
     );
   }, [exerciseLogs]);
 
-  const duration = Math.floor((Date.now() - startTime) / 1000);
-
   const warmupsEnabled = profile?.showWarmups !== false;
-
-  // Rest day
-  if (isRest) {
-    return (
-      <Layout>
-        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
-        </div>
-        <div className="relative z-10">
-          <h1 className="text-3xl font-black text-text tracking-tight mb-6">Rest Day</h1>
-          <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-8 text-center backdrop-blur-sm">
-            <div className="text-5xl mb-4">{'😴'}</div>
-            <h2 className="text-xl font-bold text-text mb-2">Enjoy Your Rest Day</h2>
-            <p className="text-muted">Recovery is when your muscles grow. Take it easy today!</p>
-            <button
-              onClick={() => { setIsRest(false); setCurrentStep('daySelect'); }}
-              className="mt-4 text-primary text-sm font-semibold hover:underline"
-            >
-              {'←'} Choose a different day
-            </button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   const handleDaySelect = (day: DayType | 'rest') => {
     if (day === 'rest') {
+      resetStartTime();
       setIsRest(true);
       return;
     }
     const found = routine.days.find((d) => d.dayType === day);
     if (found) {
+      resetStartTime();
       setSelectedDayType(day);
       setRoutineDay(found);
       setSupersetPairs([]);
@@ -305,6 +281,31 @@ export function Workout() {
       setSaving(false);
     }
   };
+
+  // Rest day
+  if (isRest) {
+    return (
+      <Layout>
+        <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary/[0.07] rounded-full blur-[120px]" />
+        </div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black text-text tracking-tight mb-6">Rest Day</h1>
+          <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-8 text-center backdrop-blur-sm">
+            <div className="text-5xl mb-4">{'😴'}</div>
+            <h2 className="text-xl font-bold text-text mb-2">Enjoy Your Rest Day</h2>
+            <p className="text-muted">Recovery is when your muscles grow. Take it easy today!</p>
+            <button
+              onClick={() => { setIsRest(false); setCurrentStep('daySelect'); }}
+              className="mt-4 text-primary text-sm font-semibold hover:underline"
+            >
+              {'←'} Choose a different day
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   const goBack = () => {
     // Summary -> CardioAbs
@@ -505,7 +506,7 @@ export function Workout() {
 
         {currentStep === 'summary' && (
           <WorkoutSummary
-            duration={duration}
+            startTime={startTime}
             exercises={exerciseLogs}
             prs={prs}
             onSave={handleSave}

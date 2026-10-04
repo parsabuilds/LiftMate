@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import type { ExerciseLog } from '../../types';
 
 interface WorkoutSummaryProps {
-  duration: number;
+  startTime: number;
   exercises: ExerciseLog[];
   prs: Array<{ exerciseName: string; weight: number; reps: number }>;
   onSave: (energyRating: number) => void;
@@ -26,8 +26,9 @@ const statMeta = [
   { label: 'Total Volume', color: '#F59E0B' },
 ];
 
-export function WorkoutSummary({ duration, exercises, prs, onSave, onBack, saving, saveError }: WorkoutSummaryProps) {
+export function WorkoutSummary({ startTime, exercises, prs, onSave, onBack, saving, saveError }: WorkoutSummaryProps) {
   const [rating, setRating] = useState(0);
+  const [duration] = useState(() => Math.floor((Date.now() - startTime) / 1000));
 
   useEffect(() => {
     if (prs.length > 0) {

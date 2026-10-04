@@ -3,6 +3,7 @@ import YouTubeThumb from '../ui/YouTubeThumb';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { SwipeableRow } from '../ui/SwipeableRow';
+import { WeightInput } from '../ui/WeightInput';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { getEquipmentType } from '../../utils/exerciseEquipment';
 import { initExerciseLog, buildStations } from '../../utils/superset';
@@ -30,7 +31,7 @@ interface ExercisePanelProps {
   sets: SetLog[];
   prevLog?: ExerciseLog;
   onUpdateReps: (setIdx: number, value: string) => void;
-  onUpdateWeight: (setIdx: number, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onUpdateWeight: (setIdx: number, value: number) => void;
   onConfirmSet: (setIdx: number) => void;
   onEditSet: (setIdx: number) => void;
   onAddSet: () => void;
@@ -120,16 +121,10 @@ function ExercisePanel({ exercise, sets, prevLog, onUpdateReps, onUpdateWeight, 
                 className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
                 placeholder={exercise.reps}
               />
-              <input
-                key={`${exercise.id}-weight-${i}`}
-                type="number"
-                inputMode="decimal"
-                step="any"
-                defaultValue={set.weight || ''}
-                onChange={(e) => onUpdateWeight(i, e)}
+              <WeightInput
+                value={set.weight}
+                onChange={(value) => onUpdateWeight(i, value)}
                 disabled={set.completed}
-                className="bg-bg/50 border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-text text-base w-full min-h-[36px] focus:outline-none focus:border-primary transition-colors"
-                placeholder="lbs"
               />
               <div className="flex items-center gap-1">
                 {set.completed ? (
@@ -152,7 +147,7 @@ function ExercisePanel({ exercise, sets, prevLog, onUpdateReps, onUpdateWeight, 
                 ) : (
                   <button
                     onClick={() => onConfirmSet(i)}
-                    disabled={set.reps === 0 || set.weight === 0}
+                    disabled={set.reps <= 0 || set.weight <= 0}
                     className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/30 transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -219,15 +214,12 @@ export function ExerciseTracker({ exercises, supersetPairs, previousLogs, bestWe
   }, [inProgressLogs, updateInProgressLog]);
 
   const updateReps = useCallback((exIdx: number, setIdx: number, value: string) => {
-    const numValue = parseInt(value) || 0;
+    const numValue = Math.max(0, parseInt(value) || 0);
     mutateSets(exIdx, (sets) => sets.map((s, i) => (i === setIdx ? { ...s, reps: numValue } : s)));
   }, [mutateSets]);
 
-  const updateWeight = useCallback((exIdx: number, setIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (!isNaN(val)) {
-      mutateSets(exIdx, (sets) => sets.map((s, i) => (i === setIdx ? { ...s, weight: val } : s)));
-    }
+  const updateWeight = useCallback((exIdx: number, setIdx: number, value: number) => {
+    mutateSets(exIdx, (sets) => sets.map((s, i) => (i === setIdx ? { ...s, weight: value } : s)));
   }, [mutateSets]);
 
   const confirmSet = useCallback((exIdx: number, setIdx: number) => {
@@ -413,7 +405,7 @@ export function ExerciseTracker({ exercises, supersetPairs, previousLogs, bestWe
             sets={inProgressLogs[exIdx]?.sets ?? []}
             prevLog={previousLogs?.[exerciseKey(exercises[exIdx].name)]}
             onUpdateReps={(setIdx, value) => updateReps(exIdx, setIdx, value)}
-            onUpdateWeight={(setIdx, e) => updateWeight(exIdx, setIdx, e)}
+            onUpdateWeight={(setIdx, value) => updateWeight(exIdx, setIdx, value)}
             onConfirmSet={(setIdx) => confirmSet(exIdx, setIdx)}
             onEditSet={(setIdx) => editSet(exIdx, setIdx)}
             onAddSet={() => addSet(exIdx)}

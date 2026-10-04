@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { initExerciseLog } from '../utils/superset';
+import { getLocalDateString } from '../utils/date';
 import type { WorkoutStep, DayType, Exercise, ExerciseLog, RoutineDay, PostWorkoutActivities, SupersetPair } from '../types';
 
 const STORAGE_KEY = 'liftmate_active_workout';
@@ -79,7 +80,13 @@ function migrateState(parsed: LegacyState): WorkoutState {
 function loadState(): WorkoutState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return migrateState(JSON.parse(raw) as LegacyState);
+    if (!raw) return null;
+    const state = migrateState(JSON.parse(raw) as LegacyState);
+    // A rest day only covers the day it was picked
+    if (state.isRest && getLocalDateString(new Date(state.startTime)) !== getLocalDateString()) {
+      return null;
+    }
+    return state;
   } catch {
     // private browsing or corrupt data
   }
@@ -115,6 +122,8 @@ interface WorkoutContextValue extends WorkoutState {
   updateInProgressLog: (index: number, log: ExerciseLog) => void;
   setFirstSetConfirmedAt: (time: number | null) => void;
   setSupersetPairs: (pairs: SupersetPair[]) => void;
+  // Restart the clock when a workout (or rest day) actually begins
+  resetStartTime: () => void;
   clearWorkout: () => void;
 }
 
@@ -183,6 +192,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, supersetPairs: pairs }));
   }, []);
 
+  const resetStartTime = useCallback(() => {
+    setState((prev) => ({ ...prev, startTime: Date.now() }));
+  }, []);
+
   const clearWorkout = useCallback(() => {
     removeState();
     setState({ ...defaultState, startTime: Date.now() });
@@ -204,6 +217,7 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         updateInProgressLog,
         setFirstSetConfirmedAt,
         setSupersetPairs,
+        resetStartTime,
         clearWorkout,
       }}
     >
