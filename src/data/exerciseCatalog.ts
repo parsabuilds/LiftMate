@@ -81,7 +81,7 @@ export const MUSCLE_GROUPS: CatalogMuscleGroup[] = [
       { id: 'cat-glute-2', name: 'Cable Kickbacks', sets: 3, reps: '12-15' },
       { id: 'cat-glute-3', name: 'Glute Bridges', sets: 3, reps: '12-15' },
       { id: 'cat-glute-4', name: 'Sumo Squats', sets: 3, reps: '10-12' },
-      { id: 'cat-glute-5', name: 'Bulgarian Split Squats', sets: 3, reps: '10-12 each' },
+      { id: 'cat-glute-5', name: 'Bulgarian Split Squats', sets: 3, reps: '10-12 each', youtubeId: 'VPhhE6bBzZE' },
     ],
   },
   {
@@ -112,7 +112,7 @@ export const MUSCLE_GROUPS: CatalogMuscleGroup[] = [
       { id: 'cat-core-1', name: 'Planks', sets: 3, reps: '30-60s' },
       { id: 'cat-core-2', name: 'Russian Twists', sets: 3, reps: '15-20' },
       { id: 'cat-core-3', name: 'Dead Bug', sets: 3, reps: '10-12 each' },
-      { id: 'cat-core-4', name: 'Crunches', sets: 3, reps: '15-20' },
+      { id: 'cat-core-4', name: 'Crunches', sets: 3, reps: '15-20', youtubeId: 'GWIEON0VSaY' },
     ],
   },
 ];

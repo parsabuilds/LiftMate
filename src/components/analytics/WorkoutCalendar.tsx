@@ -36,6 +36,46 @@ function formatShort(dateStr: string): string {
   });
 }
 
+function minutesLabel(minutes?: number): string {
+  return minutes ? `${minutes} min` : '';
+}
+
+function cardioDetail(minutes?: number, calories?: number): string {
+  return [minutesLabel(minutes), calories ? `${calories} cal` : ''].filter(Boolean).join(' · ');
+}
+
+// Cardio, abs, sauna and cold plunge logged after a workout. Older logs only
+// recorded a cardio/abs choice.
+function postWorkoutActivities(log: WorkoutLog): { label: string; detail: string }[] {
+  const pw = log.postWorkout;
+  if (!pw) {
+    if (log.cardioOrAbs === 'cardio') {
+      return [{ label: '\u{1F3C3} Cardio', detail: cardioDetail(log.cardioMinutes, log.cardioCalories) }];
+    }
+    if (log.cardioOrAbs === 'abs') return [{ label: '\u{1F4AA} Abs', detail: '' }];
+    return [];
+  }
+
+  const items: { label: string; detail: string }[] = [];
+  if (pw.cardio) {
+    items.push({ label: '\u{1F3C3} Cardio', detail: cardioDetail(pw.cardio.minutes, pw.cardio.calories) });
+  }
+  if (pw.abs) {
+    const { sets, reps } = pw.abs;
+    items.push({
+      label: '\u{1F4AA} Abs',
+      detail: sets && reps ? `${sets}×${reps}` : sets ? `${sets} sets` : reps ? `${reps} reps` : '',
+    });
+  }
+  if (pw.sauna) {
+    items.push({ label: '\u2668\uFE0F Sauna', detail: minutesLabel(pw.sauna.minutes) });
+  }
+  if (pw.coldPlunge) {
+    items.push({ label: '\u2744\uFE0F Cold Plunge', detail: minutesLabel(pw.coldPlunge.minutes) });
+  }
+  return items;
+}
+
 export function WorkoutCalendar({
   workoutLogs,
   manualDates,
@@ -219,6 +259,7 @@ export function WorkoutCalendar({
                   (sum, ex) => sum + ex.sets.length,
                   0
                 );
+                const activities = postWorkoutActivities(log);
                 return (
                   <div key={log.id}>
                     <div className="flex items-center justify-between mb-2">
@@ -256,6 +297,30 @@ export function WorkoutCalendar({
                         );
                       })}
                     </div>
+                    {activities.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted mb-2">
+                          Post-Workout
+                        </p>
+                        <div className="space-y-2">
+                          {activities.map((a) => (
+                            <div
+                              key={a.label}
+                              className="flex items-start justify-between gap-3"
+                            >
+                              <span className="text-sm text-text font-medium">
+                                {a.label}
+                              </span>
+                              {a.detail && (
+                                <span className="text-[11px] text-muted bg-white/[0.05] rounded px-1.5 py-0.5 whitespace-nowrap">
+                                  {a.detail}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

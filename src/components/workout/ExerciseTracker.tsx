@@ -6,12 +6,14 @@ import { SwipeableRow } from '../ui/SwipeableRow';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { getEquipmentType } from '../../utils/exerciseEquipment';
 import { initExerciseLog, buildStations } from '../../utils/superset';
+import { exerciseKey, getVideoId } from '../../data/exerciseLibrary';
 import type { Exercise, ExerciseLog, SetLog, SupersetPair } from '../../types';
 
 interface ExerciseTrackerProps {
   exercises: Exercise[];
   supersetPairs: SupersetPair[];
-  previousLogs?: ExerciseLog[];
+  // Both keyed by exerciseKey(name)
+  previousLogs?: Record<string, ExerciseLog>;
   bestWeights?: Record<string, number>;
   onComplete: (logs: ExerciseLog[]) => void;
   onBack: () => void;
@@ -39,6 +41,7 @@ function ExercisePanel({ exercise, sets, prevLog, onUpdateReps, onUpdateWeight, 
   const equipmentType = getEquipmentType(exercise.name);
   const isBW = equipmentType === 'bodyweight';
   const isDB = equipmentType === 'dumbbell';
+  const videoId = getVideoId(exercise);
 
   // Flag superset history so a lighter previous weight isn't read as a
   // standalone-set benchmark.
@@ -50,8 +53,8 @@ function ExercisePanel({ exercise, sets, prevLog, onUpdateReps, onUpdateWeight, 
     <div className="space-y-4">
       {/* Exercise info */}
       <div className="flex items-start gap-3">
-        {exercise.youtubeId && (
-          <YouTubeThumb youtubeId={exercise.youtubeId} exerciseName={exercise.name} size="md" />
+        {videoId && (
+          <YouTubeThumb youtubeId={videoId} exerciseName={exercise.name} size="md" />
         )}
         <div className="flex-1">
           <h3 className="text-text font-black text-xl tracking-tight">{exercise.name}</h3>
@@ -231,7 +234,8 @@ export function ExerciseTracker({ exercises, supersetPairs, previousLogs, bestWe
     if (firstSetConfirmedAt === null) {
       setFirstSetConfirmedAt(Date.now());
     }
-    const bestWeight = bestWeights?.[exercises[exIdx]?.id] ?? 0;
+    const exercise = exercises[exIdx];
+    const bestWeight = (exercise && bestWeights?.[exerciseKey(exercise.name)]) || 0;
     mutateSets(exIdx, (sets) =>
       sets.map((s, i) => {
         if (i !== setIdx) return s;
@@ -407,7 +411,7 @@ export function ExerciseTracker({ exercises, supersetPairs, previousLogs, bestWe
           <ExercisePanel
             exercise={exercises[exIdx]}
             sets={inProgressLogs[exIdx]?.sets ?? []}
-            prevLog={previousLogs?.find((l) => l.exerciseId === exercises[exIdx].id)}
+            prevLog={previousLogs?.[exerciseKey(exercises[exIdx].name)]}
             onUpdateReps={(setIdx, value) => updateReps(exIdx, setIdx, value)}
             onUpdateWeight={(setIdx, e) => updateWeight(exIdx, setIdx, e)}
             onConfirmSet={(setIdx) => confirmSet(exIdx, setIdx)}

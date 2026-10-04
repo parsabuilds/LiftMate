@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import YouTubeThumb from '../ui/YouTubeThumb';
 import { Button } from '../ui/Button';
+import { getVideoId } from '../../data/exerciseLibrary';
 import type { MuscleGroup, Exercise } from '../../types';
 
 interface ExerciseSelectorProps {
@@ -43,6 +44,7 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
           <div className="grid grid-cols-2 gap-3">
             {mg.exercises.map((exercise) => {
               const isSelected = selections[mg.name]?.some((e) => e.id === exercise.id) ?? false;
+              const videoId = getVideoId(exercise);
               return (
                 <button
                   key={exercise.id}
@@ -53,10 +55,10 @@ export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorP
                       : 'border-white/[0.06] hover:border-white/10'
                   }`}
                 >
-                  {exercise.youtubeId && (
+                  {videoId && (
                     <div className="mb-2">
                       <YouTubeThumb
-                        youtubeId={exercise.youtubeId}
+                        youtubeId={videoId}
                         exerciseName={exercise.name}
                         size="md"
                       />

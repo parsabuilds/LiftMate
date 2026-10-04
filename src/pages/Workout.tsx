@@ -16,6 +16,7 @@ import { initExerciseLog, buildStations } from '../utils/superset';
 import { useCollection, useDocument } from '../hooks/useFirestore';
 import { addDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
+import { exerciseKey } from '../data/exerciseLibrary';
 import { getLocalDateString } from '../utils/date';
 import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities, SupersetPair } from '../types';
 
@@ -76,29 +77,32 @@ export function Workout() {
   }, [previousWorkouts]);
 
   // Most recent log per exercise across the full history, regardless of day
-  // type — so "last time" hints also work in mixed superset sessions.
+  // type — so "last time" hints also work in mixed superset sessions. Keyed
+  // by exercise name, so history carries over however the exercise was added.
   const previousLogsByExercise = useMemo(() => {
     const latest: Record<string, { at: number; log: ExerciseLog }> = {};
     for (const w of previousWorkouts) {
       const at = w.startedAt ?? 0;
       for (const ex of w.exercises) {
         if (!ex.sets.length) continue;
-        const current = latest[ex.exerciseId];
-        if (!current || at > current.at) latest[ex.exerciseId] = { at, log: ex };
+        const key = exerciseKey(ex.exerciseName);
+        const current = latest[key];
+        if (!current || at > current.at) latest[key] = { at, log: ex };
       }
     }
-    return Object.values(latest).map((v) => v.log);
+    return Object.fromEntries(Object.entries(latest).map(([key, v]) => [key, v.log]));
   }, [previousWorkouts]);
 
-  // All-time best (heaviest completed) weight per exercise, across the full
-  // history regardless of day type. Used to flag a set as a PR.
+  // All-time best (heaviest completed) weight per exercise name, across the
+  // full history regardless of day type. Used to flag a set as a PR.
   const bestWeightByExercise = useMemo(() => {
     const best: Record<string, number> = {};
     for (const w of previousWorkouts) {
       for (const ex of w.exercises) {
+        const key = exerciseKey(ex.exerciseName);
         for (const s of ex.sets) {
           if (!s.completed) continue;
-          if (s.weight > (best[ex.exerciseId] ?? 0)) best[ex.exerciseId] = s.weight;
+          if (s.weight > (best[key] ?? 0)) best[key] = s.weight;
         }
       }
     }
@@ -484,8 +488,9 @@ export function Workout() {
               isOpen={showAddExerciseModal}
               onClose={() => setShowAddExerciseModal(false)}
               onAdd={handleAddExercise}
-              selectedExerciseIds={new Set(selectedExercises.map(ex => ex.id))}
+              selectedExercises={selectedExercises}
               routineDay={routineDay}
+              routine={routine}
             />
           </>
         )}
