@@ -40,6 +40,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     return { hasError: true };
   }
 
+  // After a deploy, an old page can ask for code files that are gone. One
+  // automatic reload picks up the new version.
+  componentDidCatch(error: Error) {
+    const chunkError = /dynamically imported module|Importing a module script failed|Failed to fetch|error loading/i.test(error.message);
+    try {
+      // At most once a minute, so a real outage can't cause a reload loop
+      const last = Number(sessionStorage.getItem('liftmate_chunk_reload')) || 0;
+      if (chunkError && Date.now() - last > 60_000) {
+        sessionStorage.setItem('liftmate_chunk_reload', String(Date.now()));
+        window.location.reload();
+      }
+    } catch {
+      // storage unavailable
+    }
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -100,15 +116,26 @@ function AppContent() {
   );
 }
 
+// Each account gets its own in-progress workout
+function UserWorkoutProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuthContext();
+  const uid = user?.uid ?? null;
+  return (
+    <WorkoutProvider key={uid ?? 'signed-out'} uid={uid}>
+      {children}
+    </WorkoutProvider>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <WorkoutProvider>
+        <UserWorkoutProvider>
           <ToastProvider>
             <AppContent />
           </ToastProvider>
-        </WorkoutProvider>
+        </UserWorkoutProvider>
       </AuthProvider>
     </BrowserRouter>
   );

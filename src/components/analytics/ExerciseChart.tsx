@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { WorkoutLog, TimelineEvent } from '../../types';
 import { getLocalDateString } from '../../utils/date';
+import { dateToTime, formatTimeTick } from '../../utils/chartTime';
 
 interface ExerciseChartProps {
   workoutLogs: WorkoutLog[];
@@ -39,15 +40,15 @@ export function ExerciseChart({ workoutLogs, events }: ExerciseChartProps) {
       .filter((log) => !threshold || log.date >= threshold)
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    return filtered
-      .map((log) => {
-        const exercise = log.exercises.find((ex) => ex.exerciseName === activeExercise);
-        if (!exercise) return null;
-        const maxWeight = Math.max(...exercise.sets.filter((s) => s.completed).map((s) => s.weight), 0);
-        if (maxWeight === 0) return null;
-        return { date: log.date.slice(5), fullDate: log.date, weight: maxWeight };
-      })
-      .filter((d): d is NonNullable<typeof d> => d !== null);
+    // Heaviest completed set per day (two sessions on one day make one point)
+    const bestByDate = new Map<string, number>();
+    for (const log of filtered) {
+      const exercise = log.exercises.find((ex) => ex.exerciseName === activeExercise);
+      if (!exercise) continue;
+      const maxWeight = Math.max(...exercise.sets.filter((s) => s.completed).map((s) => s.weight), 0);
+      if (maxWeight > (bestByDate.get(log.date) ?? 0)) bestByDate.set(log.date, maxWeight);
+    }
+    return [...bestByDate].map(([date, weight]) => ({ time: dateToTime(date), fullDate: date, weight }));
   }, [workoutLogs, activeExercise, range]);
 
   const filteredEvents = useMemo(() => {
@@ -98,18 +99,27 @@ export function ExerciseChart({ workoutLogs, events }: ExerciseChartProps) {
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
+              <XAxis
+                dataKey="time"
+                type="number"
+                scale="time"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={formatTimeTick}
+                stroke="#94A3B8"
+                fontSize={12}
+              />
               <YAxis stroke="#94A3B8" fontSize={12} domain={['auto', 'auto']} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '8px' }}
                 labelStyle={{ color: '#F8FAFC' }}
                 itemStyle={{ color: '#3B82F6' }}
+                labelFormatter={(t) => formatTimeTick(Number(t))}
               />
               <Line type="monotone" dataKey="weight" stroke="#3B82F6" strokeWidth={2} dot={false} />
               {filteredEvents.map((event) => (
                 <ReferenceLine
                   key={event.id}
-                  x={event.date.slice(5)}
+                  x={dateToTime(event.date)}
                   stroke={event.color || '#94A3B8'}
                   strokeDasharray="4 4"
                   label={{ value: event.label, position: 'top', fill: '#94A3B8', fontSize: 10 }}

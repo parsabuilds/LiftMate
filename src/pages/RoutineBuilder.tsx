@@ -5,7 +5,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { setDocument } from '../hooks/useFirestore';
-import { MUSCLE_GROUPS, GENERIC_WARMUPS, getExercisesForMuscleGroups, generateDayName } from '../data/exerciseCatalog';
+import { MUSCLE_GROUPS, GENERIC_WARMUPS, getExercisesForMuscleGroups, generateDayName, uniqueDayNames } from '../data/exerciseCatalog';
 import type { RoutineDay, MuscleGroup } from '../types';
 
 type Step = 'name' | 'build' | 'review';
@@ -54,7 +54,7 @@ export function RoutineBuilder() {
         muscleGroups,
       });
     }
-    return days;
+    return uniqueDayNames(days);
   }
 
   const goBack = () => {

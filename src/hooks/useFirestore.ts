@@ -3,23 +3,21 @@ import type { DocumentData, QueryConstraint } from 'firebase/firestore';
 import { db, firebaseReady } from '../lib/firebase';
 
 export function useDocument<T>(path: string | null) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // Snapshots are tagged with their path so a path change (e.g. a new day's
+  // dailyLog) never shows, or gets written back from, the previous document.
+  const [snapshot, setSnapshot] = useState<{ path: string; data: T | null } | null>(null);
+  const [error, setError] = useState<{ path: string; error: Error } | null>(null);
 
   useEffect(() => {
-    if (!path) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
+    if (!path) return;
 
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
     firebaseReady.then(async () => {
-      if (cancelled || !db) {
-        if (!cancelled) setLoading(false);
+      if (cancelled) return;
+      if (!db) {
+        setSnapshot({ path, data: null });
         return;
       }
       const { doc, onSnapshot } = await import('firebase/firestore');
@@ -27,17 +25,11 @@ export function useDocument<T>(path: string | null) {
       const docRef = doc(db, path);
       unsubscribe = onSnapshot(
         docRef,
-        (snapshot) => {
-          if (snapshot.exists()) {
-            setData({ id: snapshot.id, ...snapshot.data() } as T);
-          } else {
-            setData(null);
-          }
-          setLoading(false);
+        (snap) => {
+          setSnapshot({ path, data: snap.exists() ? ({ id: snap.id, ...snap.data() } as T) : null });
         },
         (err) => {
-          setError(err);
-          setLoading(false);
+          setError({ path, error: err });
         }
       );
     });
@@ -48,27 +40,33 @@ export function useDocument<T>(path: string | null) {
     };
   }, [path]);
 
-  return { data, loading, error };
+  const current = path !== null && snapshot?.path === path;
+  const failed = path !== null && error?.path === path;
+  return {
+    data: current ? snapshot.data : null,
+    loading: path !== null && !current && !failed,
+    error: failed ? error.error : null,
+  };
 }
 
+const NO_DOCS: never[] = [];
+
 export function useCollection<T>(path: string | null, ...queryConstraints: QueryConstraint[]) {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // Tagged with their path, like useDocument, so a path change (e.g. another
+  // user signing in) never shows the previous path's documents.
+  const [snapshot, setSnapshot] = useState<{ path: string; data: T[] } | null>(null);
+  const [error, setError] = useState<{ path: string; error: Error } | null>(null);
 
   useEffect(() => {
-    if (!path) {
-      setData([]);
-      setLoading(false);
-      return;
-    }
+    if (!path) return;
 
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
     firebaseReady.then(async () => {
-      if (cancelled || !db) {
-        if (!cancelled) setLoading(false);
+      if (cancelled) return;
+      if (!db) {
+        setSnapshot({ path, data: [] });
         return;
       }
       const { collection, onSnapshot, query } = await import('firebase/firestore');
@@ -80,17 +78,15 @@ export function useCollection<T>(path: string | null, ...queryConstraints: Query
 
       unsubscribe = onSnapshot(
         q,
-        (snapshot) => {
-          const docs = snapshot.docs.map((d) => ({
+        (snap) => {
+          const docs = snap.docs.map((d) => ({
             id: d.id,
             ...d.data(),
           })) as T[];
-          setData(docs);
-          setLoading(false);
+          setSnapshot({ path, data: docs });
         },
         (err) => {
-          setError(err);
-          setLoading(false);
+          setError({ path, error: err });
         }
       );
     });
@@ -101,7 +97,13 @@ export function useCollection<T>(path: string | null, ...queryConstraints: Query
     };
   }, [path]);
 
-  return { data, loading, error };
+  const current = path !== null && snapshot?.path === path;
+  const failed = path !== null && error?.path === path;
+  return {
+    data: current ? snapshot.data : (NO_DOCS as T[]),
+    loading: path !== null && !current && !failed,
+    error: failed ? error.error : null,
+  };
 }
 
 export async function setDocument(path: string, data: DocumentData) {
@@ -110,6 +112,23 @@ export async function setDocument(path: string, data: DocumentData) {
   const { doc, setDoc } = await import('firebase/firestore');
   const docRef = doc(db, path);
   await setDoc(docRef, data, { merge: true });
+}
+
+// Firestore write promises only settle once the server confirms, which never
+// happens offline (the write is queued on the device and syncs later). Wait
+// briefly so errors raised right away still surface, without blocking the UI
+// on the network.
+export async function untilQueued(write: Promise<unknown>, ms = 2000): Promise<void> {
+  write.catch((err) => console.error('Firestore write failed:', err));
+  await Promise.race([write, new Promise((resolve) => setTimeout(resolve, ms))]);
+}
+
+// Overwrites the whole document, so fields left out of `data` are removed.
+export async function replaceDocument(path: string, data: DocumentData) {
+  await firebaseReady;
+  if (!db) return;
+  const { doc, setDoc } = await import('firebase/firestore');
+  await setDoc(doc(db, path), data);
 }
 
 export async function updateDocument(path: string, data: DocumentData) {

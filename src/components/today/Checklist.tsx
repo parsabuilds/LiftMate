@@ -1,21 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useDocument, useCollection, setDocument } from '../../hooks/useFirestore';
-import { getLocalDateString } from '../../utils/date';
+import { useToday } from '../../hooks/useToday';
 import type { ChecklistItem, DailyLog } from '../../types';
 
 export function Checklist() {
   const { user } = useAuthContext();
-  const [today, setToday] = useState(() => getLocalDateString());
-
-  // Re-render at midnight so checklist resets on the local date change
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newDate = getLocalDateString();
-      if (newDate !== today) setToday(newDate);
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [today]);
+  // Rolls over at midnight so the checklist resets on the local date change
+  const today = useToday();
 
   const { data: items } = useCollection<ChecklistItem>(
     user ? `users/${user.uid}/checklist` : null
@@ -30,14 +21,16 @@ export function Checklist() {
   const toggleItem = async (itemId: string) => {
     if (!user) return;
     const current = checklist[itemId] || false;
+    // Merge just this item, so a stale copy of the map can't overwrite others
     await setDocument(`users/${user.uid}/dailyLogs/${today}`, {
       date: today,
-      checklist: { ...checklist, [itemId]: !current },
+      checklist: { [itemId]: !current },
     });
   };
 
   const sortedItems = [...items].sort((a, b) => a.order - b.order);
-  const completedCount = Object.values(checklist).filter(Boolean).length;
+  // Only count items that still exist (deleted ones can linger in the map)
+  const completedCount = items.filter((item) => checklist[item.id]).length;
   const total = items.length;
   const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 

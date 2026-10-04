@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Layout } from '../components/ui/Layout';
 import { useAuthContext } from '../contexts/AuthContext';
-import { useCollection, addDocument, setDocument, deleteDocument } from '../hooks/useFirestore';
+import { useCollection, addDocument, setDocument, deleteDocument, replaceDocument, untilQueued } from '../hooks/useFirestore';
 import { StatsSummary } from '../components/analytics/StatsSummary';
+import { useStreak } from '../hooks/useStreak';
 import { ExerciseChart } from '../components/analytics/ExerciseChart';
 import { BodyWeightChart } from '../components/analytics/BodyWeightChart';
 import { WorkoutCalendar } from '../components/analytics/WorkoutCalendar';
@@ -11,7 +12,8 @@ import { AddEventForm } from '../components/analytics/AddEventForm';
 import type { WorkoutLog, DailyLog, TimelineEvent, ManualWorkout } from '../types';
 
 export function Analytics() {
-  const { user, profile } = useAuthContext();
+  const { user } = useAuthContext();
+  const { current: streak } = useStreak();
 
   const { data: workoutLogs, loading: workoutsLoading } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
@@ -65,9 +67,10 @@ export function Analytics() {
   const handleSaveEvent = useCallback(async (eventData: Omit<TimelineEvent, 'id'>) => {
     if (!user) return;
     if (editingEvent) {
-      await setDocument(`users/${user.uid}/events/${editingEvent.id}`, eventData);
+      // Full overwrite so clearing the notes actually removes them
+      await untilQueued(replaceDocument(`users/${user.uid}/events/${editingEvent.id}`, eventData));
     } else {
-      await addDocument(`users/${user.uid}/events`, eventData);
+      await untilQueued(addDocument(`users/${user.uid}/events`, eventData));
     }
   }, [user, editingEvent]);
 
@@ -107,7 +110,7 @@ export function Analytics() {
           </div>
         ) : (
           <div className="space-y-4">
-            <StatsSummary workoutLogs={workoutLogs} profile={profile} />
+            <StatsSummary workoutLogs={workoutLogs} streak={streak} />
 
             <div className="bg-card/60 border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm">
               <div className="flex items-center gap-2.5 mb-4">

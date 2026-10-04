@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { CircularTimer } from '../ui/CircularTimer';
+import { CircularTimer, unlockAudio } from '../ui/CircularTimer';
 import { Button } from '../ui/Button';
 import type { Warmup } from '../../types';
 
@@ -68,6 +68,8 @@ export function WarmupCarousel({ warmups, onComplete }: WarmupCarouselProps) {
   };
 
   const handleStartTimer = () => {
+    // Audio has to be started from a tap, or iOS keeps the timer sounds muted
+    unlockAudio();
     endTimeRef.current = Date.now() + duration * 1000;
     setTimerRunning(true);
   };

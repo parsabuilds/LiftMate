@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import type { Goal } from '../types';
 import { useAuthContext } from '../contexts/AuthContext';
-import { useCollection, addDocument, setDocument, deleteDocument } from '../hooks/useFirestore';
+import { useCollection, addDocument, replaceDocument, deleteDocument } from '../hooks/useFirestore';
+import { useStreak } from '../hooks/useStreak';
 import { Layout } from '../components/ui/Layout';
 import { GoalCard } from '../components/goals/GoalCard';
 import { GoalForm } from '../components/goals/GoalForm';
 
 export function Goals() {
-  const { user, profile } = useAuthContext();
+  const { user } = useAuthContext();
   const goalsPath = user ? `users/${user.uid}/goals` : null;
   const { data: goals, loading } = useCollection<Goal>(goalsPath);
 
@@ -27,7 +28,8 @@ export function Goals() {
     if (!goalsPath) return;
 
     if (editingGoal) {
-      await setDocument(`${goalsPath}/${editingGoal.id}`, goalData);
+      // Full overwrite so cleared fields (description, target date) are removed
+      await replaceDocument(`${goalsPath}/${editingGoal.id}`, goalData);
     } else {
       await addDocument(goalsPath, goalData);
     }
@@ -59,13 +61,25 @@ export function Goals() {
       milestones: updatedMilestones,
       completed: allCompleted,
     };
+    delete updateData.id;
     if (allCompleted) {
       updateData.completedAt = Date.now();
     } else {
       delete updateData.completedAt;
     }
 
-    await setDocument(`${goalsPath}/${goalId}`, updateData);
+    await replaceDocument(`${goalsPath}/${goalId}`, updateData);
+  };
+
+  const handleToggleComplete = async (goalId: string) => {
+    if (!goalsPath) return;
+    const goal = goals.find((g) => g.id === goalId);
+    if (!goal) return;
+    const updateData: Record<string, unknown> = { ...goal, completed: !goal.completed };
+    delete updateData.id;
+    if (goal.completed) delete updateData.completedAt;
+    else updateData.completedAt = Date.now();
+    await replaceDocument(`${goalsPath}/${goalId}`, updateData);
   };
 
   const handleEdit = (goal: Goal) => {
@@ -78,8 +92,7 @@ export function Goals() {
     setEditingGoal(null);
   };
 
-  const streak = profile?.currentStreak ?? 0;
-  const longestStreak = profile?.longestStreak ?? 0;
+  const { current: streak, longest: longestStreak } = useStreak();
   const isPersonalBest = streak > 0 && streak >= longestStreak;
 
   const ringColors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899'];
@@ -150,6 +163,7 @@ export function Goals() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onToggleMilestone={handleToggleMilestone}
+                onToggleComplete={handleToggleComplete}
               />
             ))}
 
@@ -182,6 +196,7 @@ export function Goals() {
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         onToggleMilestone={handleToggleMilestone}
+                        onToggleComplete={handleToggleComplete}
                       />
                     ))}
                   </div>

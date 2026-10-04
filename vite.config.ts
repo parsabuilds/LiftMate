@@ -26,7 +26,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,svg}'],
+        // index.html must be precached: it's the offline navigation fallback,
+        // and without it the service worker fails to install
+        globPatterns: ['**/*.{js,css,html,svg}'],
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [

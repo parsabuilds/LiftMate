@@ -2,11 +2,13 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import type { ReactNode } from 'react';
 import { initExerciseLog } from '../utils/superset';
 import { getLocalDateString } from '../utils/date';
+import { readStoredWorkout, workoutStorageKey, clearStoredWorkout } from '../utils/workoutStorage';
 import type { WorkoutStep, DayType, Exercise, ExerciseLog, RoutineDay, PostWorkoutActivities, SupersetPair } from '../types';
 
-const STORAGE_KEY = 'liftmate_active_workout';
-
 interface WorkoutState {
+  // Firestore id the workout is saved under, fixed up front so a retried
+  // save (e.g. after a slow or offline first attempt) can't create a duplicate
+  workoutId: string;
   currentStep: WorkoutStep;
   selectedDayType: DayType | null;
   routineDay: RoutineDay | null;
@@ -25,6 +27,7 @@ interface WorkoutState {
 }
 
 const defaultState: WorkoutState = {
+  workoutId: '',
   currentStep: 'daySelect',
   selectedDayType: null,
   routineDay: null,
@@ -55,7 +58,12 @@ interface LegacyState extends Partial<WorkoutState> {
 }
 
 function migrateState(parsed: LegacyState): WorkoutState {
-  const state: WorkoutState = { ...defaultState, ...parsed, startTime: parsed.startTime ?? Date.now() };
+  const state: WorkoutState = {
+    ...defaultState,
+    ...parsed,
+    startTime: parsed.startTime ?? Date.now(),
+    workoutId: parsed.workoutId || crypto.randomUUID(),
+  };
   if (parsed.currentStationIndex === undefined && parsed.currentExerciseIndex !== undefined) {
     state.currentStationIndex = parsed.currentExerciseIndex;
   }
@@ -77,9 +85,9 @@ function migrateState(parsed: LegacyState): WorkoutState {
   return state;
 }
 
-function loadState(): WorkoutState | null {
+function loadState(uid: string): WorkoutState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStoredWorkout(uid);
     if (!raw) return null;
     const state = migrateState(JSON.parse(raw) as LegacyState);
     // A rest day only covers the day it was picked
@@ -93,17 +101,9 @@ function loadState(): WorkoutState | null {
   return null;
 }
 
-function saveState(state: WorkoutState) {
+function saveState(uid: string, state: WorkoutState) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore
-  }
-}
-
-function removeState() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(workoutStorageKey(uid), JSON.stringify(state));
   } catch {
     // ignore
   }
@@ -122,24 +122,28 @@ interface WorkoutContextValue extends WorkoutState {
   updateInProgressLog: (index: number, log: ExerciseLog) => void;
   setFirstSetConfirmedAt: (time: number | null) => void;
   setSupersetPairs: (pairs: SupersetPair[]) => void;
-  // Restart the clock when a workout (or rest day) actually begins
-  resetStartTime: () => void;
+  // Start a fresh workout on a routine day (or a rest day), dropping anything
+  // left over from an abandoned one and starting the clock now
+  beginWorkout: (day: RoutineDay) => void;
+  beginRestDay: () => void;
   clearWorkout: () => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextValue | null>(null);
 
-export function WorkoutProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<WorkoutState>(() => loadState() ?? { ...defaultState, startTime: Date.now() });
+// Remount (key it by uid) when the signed-in user changes.
+export function WorkoutProvider({ uid, children }: { uid: string | null; children: ReactNode }) {
+  const [state, setState] = useState<WorkoutState>(() => (uid && loadState(uid)) || { ...defaultState, startTime: Date.now() });
 
   // Persist to localStorage on every state change
   useEffect(() => {
+    if (!uid) return;
     if (state.currentStep !== 'daySelect' || state.isRest) {
-      saveState(state);
+      saveState(uid, state);
     } else {
-      removeState();
+      clearStoredWorkout(uid);
     }
-  }, [state]);
+  }, [uid, state]);
 
   const setCurrentStep = useCallback((step: WorkoutStep) => {
     setState((prev) => ({ ...prev, currentStep: step }));
@@ -192,14 +196,25 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, supersetPairs: pairs }));
   }, []);
 
-  const resetStartTime = useCallback(() => {
-    setState((prev) => ({ ...prev, startTime: Date.now() }));
+  const beginWorkout = useCallback((day: RoutineDay) => {
+    setState({
+      ...defaultState,
+      workoutId: crypto.randomUUID(),
+      startTime: Date.now(),
+      selectedDayType: day.dayType,
+      routineDay: day,
+      currentStep: 'exerciseSelect',
+    });
+  }, []);
+
+  const beginRestDay = useCallback(() => {
+    setState({ ...defaultState, startTime: Date.now(), isRest: true });
   }, []);
 
   const clearWorkout = useCallback(() => {
-    removeState();
+    if (uid) clearStoredWorkout(uid);
     setState({ ...defaultState, startTime: Date.now() });
-  }, []);
+  }, [uid]);
 
   return (
     <WorkoutContext.Provider
@@ -217,7 +232,8 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
         updateInProgressLog,
         setFirstSetConfirmedAt,
         setSupersetPairs,
-        resetStartTime,
+        beginWorkout,
+        beginRestDay,
         clearWorkout,
       }}
     >

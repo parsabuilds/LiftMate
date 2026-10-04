@@ -99,7 +99,7 @@ export function Settings() {
     await addDocument(`users/${user.uid}/checklist`, {
       label: newChecklistLabel.trim(),
       emoji: newChecklistEmoji.trim() || '\u2705',
-      order: checklistItems.length,
+      order: checklistItems.reduce((max, item) => Math.max(max, item.order ?? 0), -1) + 1,
     });
     setNewChecklistLabel('');
     setNewChecklistEmoji('');

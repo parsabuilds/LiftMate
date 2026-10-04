@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
-import { setDocument, updateDocument } from '../hooks/useFirestore';
+import { setDocument } from '../hooks/useFirestore';
 import { getRoutineByGender } from '../data/defaultRoutines';
-import { MUSCLE_GROUPS, GENERIC_WARMUPS, getExercisesForMuscleGroups, generateDayName } from '../data/exerciseCatalog';
+import { MUSCLE_GROUPS, GENERIC_WARMUPS, getExercisesForMuscleGroups, generateDayName, uniqueDayNames } from '../data/exerciseCatalog';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import type { Routine, RoutineDay } from '../types';
@@ -79,21 +79,23 @@ export function Onboarding() {
         muscleGroups,
       });
     }
-    return { id: 'custom', days };
+    return { id: 'custom', days: uniqueDayNames(days) };
   }
 
   async function handleSubmit() {
     if (!user || !gender) return;
     setSubmitting(true);
     try {
-      await updateDocument(`users/${user.uid}`, {
+      // Routine first: saving the gender ends onboarding immediately
+      const routine = useDefault ? getRoutineByGender(gender) : buildCustomRoutine();
+      await setDocument(`users/${user.uid}/routine/current`, routine);
+
+      // setDocument (merge) also works if the profile doc doesn't exist yet
+      await setDocument(`users/${user.uid}`, {
         displayName: name,
         gender,
         showWarmups,
       });
-
-      const routine = useDefault ? getRoutineByGender(gender) : buildCustomRoutine();
-      await setDocument(`users/${user.uid}/routine/current`, routine);
 
       navigate('/');
     } catch {

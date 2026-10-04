@@ -14,10 +14,13 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { useWorkoutContext } from '../contexts/WorkoutContext';
 import { initExerciseLog, buildStations } from '../utils/superset';
 import { useCollection, useDocument } from '../hooks/useFirestore';
-import { addDocument } from '../hooks/useFirestore';
+import { replaceDocument, untilQueued } from '../hooks/useFirestore';
+import { markPRs } from '../utils/prs';
+import { uniqueDayNames } from '../data/exerciseCatalog';
 import { getRoutineByGender } from '../data/defaultRoutines';
 import { exerciseKey } from '../data/exerciseLibrary';
 import { getLocalDateString } from '../utils/date';
+import { useToday } from '../hooks/useToday';
 import type { WorkoutStep, DayType, Exercise, ExerciseLog, WorkoutLog, Routine, PostWorkoutActivities, SupersetPair } from '../types';
 
 const STEP_ORDER: WorkoutStep[] = ['daySelect', 'exerciseSelect', 'supersetPair', 'warmup', 'logging', 'cardioAbs', 'summary'];
@@ -39,8 +42,8 @@ export function Workout() {
 
   const {
     currentStep, setCurrentStep,
-    selectedDayType, setSelectedDayType,
-    routineDay, setRoutineDay,
+    selectedDayType,
+    routineDay,
     selectedExercises, setSelectedExercises,
     exerciseLogs, setExerciseLogs,
     postWorkout, setPostWorkout,
@@ -51,10 +54,11 @@ export function Workout() {
     inProgressLogs, setInProgressLogs,
     firstSetConfirmedAt,
     supersetPairs, setSupersetPairs,
-    resetStartTime,
+    workoutId,
+    beginWorkout, beginRestDay,
   } = useWorkoutContext();
 
-  const { data: firestoreRoutine } = useDocument<Routine>(
+  const { data: firestoreRoutine, loading: routineLoading } = useDocument<Routine>(
     user ? `users/${user.uid}/routine/current` : null
   );
 
@@ -63,19 +67,19 @@ export function Workout() {
     if (!firestoreRoutine || firestoreRoutine.id === 'mens-ppl' || firestoreRoutine.id === 'womens-fbs') {
       return getRoutineByGender(gender);
     }
-    return firestoreRoutine;
+    return { ...firestoreRoutine, days: uniqueDayNames(firestoreRoutine.days) };
   }, [firestoreRoutine, profile?.gender]);
 
   const { data: previousWorkouts } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
   );
 
+  const today = useToday();
   const todaysLogs = useMemo(() => {
-    const today = getLocalDateString();
     return previousWorkouts
       .filter((w) => w.date === today && w.completedAt)
       .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
-  }, [previousWorkouts]);
+  }, [previousWorkouts, today]);
 
   // Most recent log per exercise across the full history, regardless of day
   // type — so "last time" hints also work in mixed superset sessions. Keyed
@@ -122,19 +126,21 @@ export function Workout() {
 
   const handleDaySelect = (day: DayType | 'rest') => {
     if (day === 'rest') {
-      resetStartTime();
-      setIsRest(true);
+      beginRestDay();
       return;
     }
     const found = routine.days.find((d) => d.dayType === day);
-    if (found) {
-      resetStartTime();
-      setSelectedDayType(day);
-      setRoutineDay(found);
-      setSupersetPairs([]);
-      setCurrentStep('exerciseSelect');
-    }
+    if (found) beginWorkout(found);
   };
+
+  // Coming back here mid-workout shows what's already picked, including
+  // exercises added with + that aren't part of the day.
+  const selectorGroups = useMemo(() => {
+    if (!routineDay) return [];
+    const inDay = new Set(routineDay.muscleGroups.flatMap((mg) => mg.exercises.map((ex) => ex.id)));
+    const added = selectedExercises.filter((ex) => !inDay.has(ex.id));
+    return added.length > 0 ? [...routineDay.muscleGroups, { name: 'Added', exercises: added }] : routineDay.muscleGroups;
+  }, [routineDay, selectedExercises]);
 
   const handleExerciseSelect = (selected: Record<string, Exercise[]>, buildSupersets: boolean) => {
     const flat: Exercise[] = [];
@@ -145,9 +151,14 @@ export function Workout() {
       flat.push(ex);
     }
 
+    // Keep the existing order, logged sets and pairs for exercises still picked
+    const previousOrder = new Map(selectedExercises.map((ex, i) => [ex.id, i]));
+    flat.sort((a, b) => (previousOrder.get(a.id) ?? Infinity) - (previousOrder.get(b.id) ?? Infinity) || 0);
+    const ids = new Set(flat.map((ex) => ex.id));
+
     setSelectedExercises(flat);
-    setSupersetPairs([]);
-    setInProgressLogs(flat.map(initExerciseLog));
+    setSupersetPairs(supersetPairs.filter((p) => ids.has(p.a) && ids.has(p.b)));
+    setInProgressLogs(alignLogs(flat, inProgressLogs));
     setCurrentStationIndex(0);
     if (buildSupersets) {
       setCurrentStep('supersetPair');
@@ -175,7 +186,9 @@ export function Workout() {
   };
 
   const handleLoggingComplete = (logs: ExerciseLog[]) => {
-    setExerciseLogs(logs);
+    // Settle PRs once against full history (it may still have been loading
+    // when some sets were checked off)
+    setExerciseLogs(markPRs(logs, bestWeightByExercise));
     setCurrentStep('cardioAbs');
   };
 
@@ -272,7 +285,8 @@ export function Workout() {
       if (Object.keys(postWorkout).length > 0) {
         workoutLog.postWorkout = postWorkout;
       }
-      await addDocument(`users/${user.uid}/workoutLogs`, workoutLog);
+      // Saved under the workout's fixed id, so retrying never duplicates it
+      await untilQueued(replaceDocument(`users/${user.uid}/workoutLogs/${workoutId || crypto.randomUUID()}`, workoutLog));
       clearWorkout();
       navigate('/');
     } catch (err) {
@@ -450,13 +464,20 @@ export function Workout() {
               </Button>
             </div>
           ) : (
-            <DaySelector routine={routine} onSelectDay={handleDaySelect} />
+            routineLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <DaySelector routine={routine} onSelectDay={handleDaySelect} />
+            )
           )
         )}
 
         {currentStep === 'exerciseSelect' && routineDay && (
           <ExerciseSelector
-            muscleGroups={routineDay.muscleGroups}
+            muscleGroups={selectorGroups}
+            initialSelected={selectedExercises}
             onComplete={handleExerciseSelect}
           />
         )}

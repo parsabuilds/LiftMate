@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useDocument, setDocument } from '../../hooks/useFirestore';
+import { useToday } from '../../hooks/useToday';
 import type { DailyLog } from '../../types';
-import { getLocalDateString } from '../../utils/date';
 
 export function QuickLog() {
   const { user } = useAuthContext();
-  const today = getLocalDateString();
+  const today = useToday();
 
   const { data: dailyLog } = useDocument<DailyLog>(
     user ? `users/${user.uid}/dailyLogs/${today}` : null
@@ -14,15 +14,13 @@ export function QuickLog() {
 
   const [weight, setWeight] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Whether today's weight has been saved (from Firestore)
   const hasSavedWeight = dailyLog?.weight != null && dailyLog.weight > 0;
 
+  // Follow the saved weight, including clearing it when a new day starts
   useEffect(() => {
-    if (dailyLog?.weight) {
-      setWeight(String(dailyLog.weight));
-    }
+    setWeight(dailyLog?.weight ? String(dailyLog.weight) : '');
   }, [dailyLog?.weight]);
 
   const updateLog = async (updates: Partial<DailyLog>) => {
@@ -33,12 +31,21 @@ export function QuickLog() {
     });
   };
 
-  const handleSaveWeight = async () => {
-    const num = parseFloat(weight);
-    if (isNaN(num) || num <= 0) return;
-    setIsSaving(true);
-    await updateLog({ weight: num });
-    setIsSaving(false);
+  const parsedWeight = parseFloat(weight);
+  const validWeight = Number.isFinite(parsedWeight) && parsedWeight > 0;
+
+  // Saving an empty field removes a weight logged by mistake. The write isn't
+  // awaited: the local cache shows it right away, and it syncs once online.
+  const handleSaveWeight = () => {
+    if (!validWeight && !hasSavedWeight) return;
+    updateLog({ weight: validWeight ? parsedWeight : null }).catch((err) => {
+      console.error('Failed to save weight:', err);
+    });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setWeight(dailyLog?.weight ? String(dailyLog.weight) : '');
     setIsEditing(false);
   };
 
@@ -113,12 +120,20 @@ export function QuickLog() {
                   className="w-full min-h-[44px] bg-bg/60 border border-border/60 rounded-xl pl-11 pr-4 py-2.5 text-text placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all text-base font-medium"
                 />
               </div>
+              {isEditing && (
+                <button
+                  onClick={handleCancelEdit}
+                  className="min-h-[44px] px-3 text-muted hover:text-text text-sm font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 onClick={handleSaveWeight}
-                disabled={isSaving || !weight || parseFloat(weight) <= 0}
+                disabled={!validWeight && !(isEditing && hasSavedWeight)}
                 className="min-h-[44px] px-5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-white text-sm font-semibold transition-all"
               >
-                {isSaving ? 'Saving...' : 'Save'}
+                {validWeight || !hasSavedWeight ? 'Save' : 'Clear'}
               </button>
             </div>
           )}

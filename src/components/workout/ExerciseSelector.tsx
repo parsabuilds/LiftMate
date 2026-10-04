@@ -6,15 +6,18 @@ import type { MuscleGroup, Exercise } from '../../types';
 
 interface ExerciseSelectorProps {
   muscleGroups: MuscleGroup[];
+  // Already-picked exercises to start with checked (when coming back mid-workout)
+  initialSelected?: Exercise[];
   // buildSupersets: user wants to pair some picks into supersets before starting
   onComplete: (selected: Record<string, Exercise[]>, buildSupersets: boolean) => void;
 }
 
-export function ExerciseSelector({ muscleGroups, onComplete }: ExerciseSelectorProps) {
+export function ExerciseSelector({ muscleGroups, initialSelected = [], onComplete }: ExerciseSelectorProps) {
   const [selections, setSelections] = useState<Record<string, Exercise[]>>(() => {
+    const picked = new Set(initialSelected.map((ex) => ex.id));
     const init: Record<string, Exercise[]> = {};
     for (const mg of muscleGroups) {
-      init[mg.name] = [];
+      init[mg.name] = mg.exercises.filter((ex) => picked.has(ex.id));
     }
     return init;
   });

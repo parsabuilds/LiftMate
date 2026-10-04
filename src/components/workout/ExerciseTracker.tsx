@@ -7,6 +7,7 @@ import { WeightInput } from '../ui/WeightInput';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { getEquipmentType } from '../../utils/exerciseEquipment';
 import { initExerciseLog, buildStations } from '../../utils/superset';
+import { flagPRSets } from '../../utils/prs';
 import { exerciseKey, getVideoId } from '../../data/exerciseLibrary';
 import type { Exercise, ExerciseLog, SetLog, SupersetPair } from '../../types';
 
@@ -222,24 +223,25 @@ export function ExerciseTracker({ exercises, supersetPairs, previousLogs, bestWe
     mutateSets(exIdx, (sets) => sets.map((s, i) => (i === setIdx ? { ...s, weight: value } : s)));
   }, [mutateSets]);
 
+  const bestWeightFor = useCallback((exIdx: number) => {
+    const exercise = exercises[exIdx];
+    return (exercise && bestWeights?.[exerciseKey(exercise.name)]) || 0;
+  }, [exercises, bestWeights]);
+
   const confirmSet = useCallback((exIdx: number, setIdx: number) => {
     if (firstSetConfirmedAt === null) {
       setFirstSetConfirmedAt(Date.now());
     }
-    const exercise = exercises[exIdx];
-    const bestWeight = (exercise && bestWeights?.[exerciseKey(exercise.name)]) || 0;
     mutateSets(exIdx, (sets) =>
-      sets.map((s, i) => {
-        if (i !== setIdx) return s;
-        const isPR = bestWeight > 0 && s.weight > bestWeight;
-        return { ...s, completed: true, isPR };
-      })
+      flagPRSets(sets.map((s, i) => (i === setIdx ? { ...s, completed: true } : s)), bestWeightFor(exIdx))
     );
-  }, [firstSetConfirmedAt, setFirstSetConfirmedAt, bestWeights, exercises, mutateSets]);
+  }, [firstSetConfirmedAt, setFirstSetConfirmedAt, bestWeightFor, mutateSets]);
 
   const editSet = useCallback((exIdx: number, setIdx: number) => {
-    mutateSets(exIdx, (sets) => sets.map((s, i) => (i === setIdx ? { ...s, completed: false, isPR: false } : s)));
-  }, [mutateSets]);
+    mutateSets(exIdx, (sets) =>
+      flagPRSets(sets.map((s, i) => (i === setIdx ? { ...s, completed: false } : s)), bestWeightFor(exIdx))
+    );
+  }, [mutateSets, bestWeightFor]);
 
   const addSet = useCallback((exIdx: number) => {
     mutateSets(exIdx, (sets) => [

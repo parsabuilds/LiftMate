@@ -134,3 +134,13 @@ export function generateDayName(muscleNames: string[]): string {
   if (muscleNames.length <= 2) return muscleNames.join(' & ');
   return muscleNames.slice(0, 2).join(' & ') + ' +' + (muscleNames.length - 2);
 }
+
+// Day names double as day ids, so repeats get a number: "Chest & Back +1 (2)".
+export function uniqueDayNames<T extends { dayType: string }>(days: T[]): T[] {
+  const seen = new Map<string, number>();
+  return days.map((day) => {
+    const n = (seen.get(day.dayType) ?? 0) + 1;
+    seen.set(day.dayType, n);
+    return n === 1 ? day : { ...day, dayType: `${day.dayType} (${n})` };
+  });
+}

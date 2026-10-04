@@ -8,7 +8,7 @@ import { getLocalDateString } from '../../utils/date';
 interface AddEventFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: Omit<TimelineEvent, 'id'>) => void;
+  onSave: (event: Omit<TimelineEvent, 'id'>) => void | Promise<void>;
   editingEvent?: TimelineEvent | null;
 }
 
@@ -35,8 +35,10 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
   const [type, setType] = useState<TimelineEvent['type']>('milestone');
   const [label, setLabel] = useState('');
   const [notes, setNotes] = useState('');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
+    setSaveError(null);
     if (editingEvent) {
       setDate(editingEvent.date);
       setType(editingEvent.type);
@@ -50,17 +52,25 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
     }
   }, [editingEvent, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label.trim() || !date) return;
-    onSave({
+    // Firestore rejects undefined values, so leave notes out when empty
+    const event: Omit<TimelineEvent, 'id'> = {
       date,
       type,
       label: label.trim(),
       color: TYPE_COLORS[type],
-      notes: notes.trim() || undefined,
-    });
-    onClose();
+    };
+    if (notes.trim()) event.notes = notes.trim();
+    setSaveError(null);
+    try {
+      await onSave(event);
+      onClose();
+    } catch (err) {
+      console.error('Failed to save event:', err);
+      setSaveError('Could not save the event. Please try again.');
+    }
   };
 
   return (
@@ -105,6 +115,10 @@ export function AddEventForm({ isOpen, onClose, onSave, editingEvent }: AddEvent
             className="bg-card/60 border border-white/[0.06] rounded-xl px-4 py-2.5 text-text placeholder:text-muted/50 focus:outline-none focus:border-primary resize-none transition-colors"
           />
         </div>
+
+        {saveError && (
+          <p className="text-red-400 text-sm">{saveError}</p>
+        )}
 
         <div className="flex gap-2 pt-2">
           <Button variant="secondary" type="button" onClick={onClose} fullWidth>

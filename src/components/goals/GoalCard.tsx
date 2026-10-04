@@ -8,6 +8,8 @@ interface GoalCardProps {
   onEdit: (goal: Goal) => void;
   onDelete: (id: string) => void;
   onToggleMilestone: (goalId: string, milestoneId: string) => void;
+  // Goals without milestones are completed by hand
+  onToggleComplete: (goalId: string) => void;
 }
 
 function ProgressRing({ progress, color, size = 72, strokeWidth = 6 }: {
@@ -54,7 +56,7 @@ function ProgressRing({ progress, color, size = 72, strokeWidth = 6 }: {
   );
 }
 
-export function GoalCard({ goal, color, onEdit, onDelete, onToggleMilestone }: GoalCardProps) {
+export function GoalCard({ goal, color, onEdit, onDelete, onToggleMilestone, onToggleComplete }: GoalCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -131,6 +133,17 @@ export function GoalCard({ goal, color, onEdit, onDelete, onToggleMilestone }: G
           {/* Target date */}
           {goal.targetDate && (
             <p className="text-xs text-muted mt-2">Target: {goal.targetDate}</p>
+          )}
+
+          {totalCount === 0 && (
+            <button
+              type="button"
+              onClick={() => onToggleComplete(goal.id)}
+              className="mt-2 text-[11px] font-semibold hover:underline"
+              style={{ color }}
+            >
+              {goal.completed ? 'Completed \u2713 \u00b7 Reopen' : 'Mark complete'}
+            </button>
           )}
         </div>
       </div>

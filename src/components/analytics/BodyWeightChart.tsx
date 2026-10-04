@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { DailyLog, TimelineEvent } from '../../types';
 import { getLocalDateString } from '../../utils/date';
+import { dateToTime, formatTimeTick } from '../../utils/chartTime';
 
 interface BodyWeightChartProps {
   dailyLogs: DailyLog[];
@@ -27,7 +28,7 @@ export function BodyWeightChart({ dailyLogs, events }: BodyWeightChartProps) {
       .filter((log) => log.weight !== null && log.weight !== undefined)
       .filter((log) => !threshold || log.date >= threshold)
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((log) => ({ date: log.date.slice(5), fullDate: log.date, weight: log.weight }));
+      .map((log) => ({ time: dateToTime(log.date), fullDate: log.date, weight: log.weight }));
   }, [dailyLogs, range]);
 
   const trend = useMemo(() => {
@@ -75,18 +76,27 @@ export function BodyWeightChart({ dailyLogs, events }: BodyWeightChartProps) {
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
+              <XAxis
+                dataKey="time"
+                type="number"
+                scale="time"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={formatTimeTick}
+                stroke="#94A3B8"
+                fontSize={12}
+              />
               <YAxis stroke="#94A3B8" fontSize={12} domain={['auto', 'auto']} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1E293B', border: '1px solid #334155', borderRadius: '8px' }}
                 labelStyle={{ color: '#F8FAFC' }}
                 itemStyle={{ color: '#10B981' }}
+                labelFormatter={(t) => formatTimeTick(Number(t))}
               />
               <Line type="monotone" dataKey="weight" stroke="#10B981" strokeWidth={2} dot={false} />
               {filteredEvents.map((event) => (
                 <ReferenceLine
                   key={event.id}
-                  x={event.date.slice(5)}
+                  x={dateToTime(event.date)}
                   stroke={event.color || '#94A3B8'}
                   strokeDasharray="4 4"
                   label={{ value: event.label, position: 'top', fill: '#94A3B8', fontSize: 10 }}

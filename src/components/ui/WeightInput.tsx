@@ -10,15 +10,18 @@ export function WeightInput({ value, onChange, disabled }: { value: number; onCh
     setText(value ? String(value) : '');
   }
   return (
+    // A text field (with the decimal keypad) so the browser never rewrites
+    // what's typed, the way number fields do with "22."
     <input
-      type="number"
+      type="text"
       inputMode="decimal"
-      step="any"
-      min="0"
+      autoComplete="off"
       value={text}
       onChange={(e) => {
-        setText(e.target.value);
-        const next = parseFloat(e.target.value);
+        const typed = e.target.value.replace(',', '.');
+        if (!/^\d*\.?\d*$/.test(typed)) return;
+        setText(typed);
+        const next = parseFloat(typed);
         onChange(Number.isFinite(next) && next > 0 ? next : 0);
       }}
       disabled={disabled}

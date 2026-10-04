@@ -4,7 +4,8 @@ import { useAuthContext } from '../../contexts/AuthContext';
 import { useWorkoutContext } from '../../contexts/WorkoutContext';
 import { useCollection, useDocument } from '../../hooks/useFirestore';
 import { getRoutineByGender } from '../../data/defaultRoutines';
-import { getLocalDateString } from '../../utils/date';
+import { uniqueDayNames } from '../../data/exerciseCatalog';
+import { useToday } from '../../hooks/useToday';
 import type { WorkoutLog, Routine } from '../../types';
 
 export function WorkoutCard() {
@@ -17,7 +18,7 @@ export function WorkoutCard() {
     inProgressLogs,
     startTime,
   } = useWorkoutContext();
-  const today = getLocalDateString();
+  const today = useToday();
 
   const { data: workoutLogs } = useCollection<WorkoutLog>(
     user ? `users/${user.uid}/workoutLogs` : null
@@ -32,7 +33,7 @@ export function WorkoutCard() {
     if (!firestoreRoutine || firestoreRoutine.id === 'mens-ppl' || firestoreRoutine.id === 'womens-fbs') {
       return getRoutineByGender(gender);
     }
-    return firestoreRoutine;
+    return { ...firestoreRoutine, days: uniqueDayNames(firestoreRoutine.days) };
   }, [firestoreRoutine, profile?.gender]);
 
   const dayTypes = routine.days.map((d) => d.dayType);

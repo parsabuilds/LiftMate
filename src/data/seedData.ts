@@ -6,9 +6,11 @@ import { defaultChecklistItems } from './defaultChecklist';
 export async function seedUserData(user: User): Promise<void> {
   await firebaseReady;
   if (!db) return;
-  const { doc, getDoc } = await import('firebase/firestore');
+  // Ask the server, not the local cache: an empty cache (or being offline)
+  // must never look like a brand-new user and overwrite a real profile.
+  const { doc, getDocFromServer } = await import('firebase/firestore');
   const profileRef = doc(db, `users/${user.uid}`);
-  const profileSnap = await getDoc(profileRef);
+  const profileSnap = await getDocFromServer(profileRef);
 
   if (profileSnap.exists()) return; // Already seeded
 

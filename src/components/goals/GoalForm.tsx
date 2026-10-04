@@ -58,15 +58,20 @@ export function GoalForm({ isOpen, onClose, onSave, editingGoal }: GoalFormProps
         return clean as unknown as Milestone;
       });
 
+    // With milestones, a goal is complete exactly when all of them are
+    const completed = validMilestones.length > 0
+      ? validMilestones.every((m) => m.completed)
+      : editingGoal?.completed ?? false;
+
     const goalData: Record<string, unknown> = {
       title: title.trim(),
-      completed: editingGoal?.completed ?? false,
+      completed,
       createdAt: editingGoal?.createdAt ?? Date.now(),
       milestones: validMilestones,
     };
     if (description.trim()) goalData.description = description.trim();
     if (targetDate) goalData.targetDate = targetDate;
-    if (editingGoal?.completedAt) goalData.completedAt = editingGoal.completedAt;
+    if (completed) goalData.completedAt = (editingGoal?.completed && editingGoal.completedAt) || Date.now();
 
     onSave(goalData as Omit<Goal, 'id'>);
 

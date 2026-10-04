@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import type { WorkoutLog, UserProfile } from '../../types';
+import type { WorkoutLog } from '../../types';
 import { getLocalDateString } from '../../utils/date';
 
 interface StatsSummaryProps {
   workoutLogs: WorkoutLog[];
-  profile: UserProfile | null;
+  streak: number;
 }
 
 const statMeta = [
@@ -14,11 +14,12 @@ const statMeta = [
   { label: 'PRs This Month', color: '#A855F7' },
 ];
 
-export function StatsSummary({ workoutLogs, profile }: StatsSummaryProps) {
+export function StatsSummary({ workoutLogs, streak }: StatsSummaryProps) {
   const stats = useMemo(() => {
     const now = new Date();
+    // Last 7 days including today
     const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    weekAgo.setDate(weekAgo.getDate() - 6);
     const weekStr = getLocalDateString(weekAgo);
 
     const monthAgo = new Date(now);
@@ -54,7 +55,7 @@ export function StatsSummary({ workoutLogs, profile }: StatsSummaryProps) {
 
   const values = [
     String(workoutLogs.length),
-    `${profile?.currentStreak ?? 0} days`,
+    `${streak} day${streak === 1 ? '' : 's'}`,
     `${formatVolume(stats.weeklyVolume)} lbs`,
     String(stats.prsThisMonth),
   ];

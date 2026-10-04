@@ -1,7 +1,11 @@
 import { useAuthContext } from '../../contexts/AuthContext';
+import { useStreak } from '../../hooks/useStreak';
+import { useToday } from '../../hooks/useToday';
 
 export function GreetingHeader() {
   const { profile } = useAuthContext();
+  const today = useToday();
+  const { current: streak } = useStreak();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -12,8 +16,8 @@ export function GreetingHeader() {
 
   const firstName = profile?.displayName?.split(' ')[0] || 'there';
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', {
+  const [y, m, d] = today.split('-').map(Number);
+  const dateStr = new Date(y, m - 1, d).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -40,13 +44,13 @@ export function GreetingHeader() {
         </div>
 
         {/* Streak badge */}
-        {profile && profile.currentStreak > 0 && (
+        {streak > 0 && (
           <div className="relative flex-shrink-0">
             {/* Glow behind badge */}
             <div className="absolute inset-0 bg-orange-500/20 rounded-2xl blur-lg" />
             <div className="relative bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 rounded-2xl px-4 py-2.5 text-center">
               <span className="block text-2xl leading-none mb-0.5">
-                {profile.currentStreak}
+                {streak}
               </span>
               <span className="block text-[10px] font-bold uppercase tracking-wider text-orange-400">
                 day streak

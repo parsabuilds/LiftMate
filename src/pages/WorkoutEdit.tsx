@@ -92,17 +92,35 @@ export function WorkoutEdit() {
     setSaving(true);
     setSaveError(null);
     try {
-      // Filter out sets with zero reps (allow weight=0 for bodyweight exercises)
-      const cleanedExercises = editedExercises
+      // Drop sets with no reps (weight 0 is fine for bodyweight exercises)
+      // and exercises left with no sets
+      let cleanedExercises: ExerciseLog[] = editedExercises
         .map((ex) => ({
           ...ex,
           sets: ex.sets.filter((s) => s.reps > 0),
         }))
         .filter((ex) => ex.sets.length > 0);
 
+      // A superset tag only means something while both partners remain
+      const groupSizes = new Map<number, number>();
+      for (const ex of cleanedExercises) {
+        if (ex.supersetGroup) groupSizes.set(ex.supersetGroup, (groupSizes.get(ex.supersetGroup) ?? 0) + 1);
+      }
+      cleanedExercises = cleanedExercises.map((ex) => {
+        if (!ex.supersetGroup || (groupSizes.get(ex.supersetGroup) ?? 0) > 1) return ex;
+        const rest = { ...ex };
+        delete rest.supersetGroup;
+        return rest;
+      });
+      const isSuperset = cleanedExercises.some((ex) => ex.supersetGroup);
+
       await updateDocument(`users/${user.uid}/workoutLogs/${id}`, {
         exercises: cleanedExercises,
+        isSuperset,
       });
+      // Show exactly what was saved
+      setEditedExercises(cleanedExercises);
+      setActiveExerciseIndex((i) => Math.min(i, Math.max(0, cleanedExercises.length - 1)));
       setSaved(true);
     } catch (err) {
       console.error('Failed to update workout:', err);

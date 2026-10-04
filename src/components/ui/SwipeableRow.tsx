@@ -114,6 +114,8 @@ export function SwipeableRow({ children, onDelete, disabled }: SwipeableRowProps
           transform: `translateX(${translateX}px)`,
           transition: isAnimating ? 'transform 200ms ease-out' : 'none',
           willChange: isSwiping.current ? 'transform' : 'auto',
+          // Let the browser scroll vertically; horizontal drags are the swipe
+          touchAction: 'pan-y',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

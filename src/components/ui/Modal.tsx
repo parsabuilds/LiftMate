@@ -26,6 +26,9 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 transition-opacity duration-200"
       onClick={(e) => {
+        // Portaled, but React still bubbles clicks to the opener's ancestors
+        // (e.g. a video thumbnail inside a selectable card) — stop them here.
+        e.stopPropagation();
         if (contentRef.current && !contentRef.current.contains(e.target as Node)) {
           onClose();
         }

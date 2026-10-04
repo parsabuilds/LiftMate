@@ -35,10 +35,17 @@ export function useAuth() {
   const signIn = async () => {
     await firebaseReady;
     if (!auth) return;
+    const { signInWithPopup, signInWithRedirect, GoogleAuthProvider } = await import('firebase/auth');
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (error) {
+      const code = (error as { code?: string }).code;
+      // Mobile browsers (and installed PWAs) often block the popup; fall back
+      // to a full-page redirect instead of silently doing nothing.
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return;
+      }
       console.error('Sign in error:', error);
     }
   };
